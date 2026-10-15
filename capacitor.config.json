@@ -10,5 +10,9 @@
     "CapacitorHttp": {
       "enabled": true
     }
+  },
+  "server": {
+    "hostname": "hunterseriph.app",
+    "androidScheme": "https"
   }
 }
