@@ -1,0 +1,14 @@
+{
+  "appId": "com.hunterseriph.app",
+  "appName": "Hunter Seriph",
+  "webDir": "www",
+  "backgroundColor": "#070405",
+  "android": {
+    "backgroundColor": "#070405"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}
