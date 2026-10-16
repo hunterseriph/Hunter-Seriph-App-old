@@ -650,10 +650,12 @@ function setLive(on){
 (function(){
   var p=$('twitchPlayer'); if(!p) return; var box=p.parentNode;
   var bar=document.createElement('div'); bar.id='twBar';
-  bar.innerHTML='<a id="twLogin" href="https://www.twitch.tv/login">SIGN IN TO TWITCH</a><a id="twApp" href="twitch://stream/'+TWITCH+'">OPEN IN TWITCH APP</a><div id="twNote">18+ streams need a Twitch sign-in. Sign in once here and the app remembers it. Use the back button to return.</div>';
+  bar.innerHTML='<a id="twLogin" href="https://www.twitch.tv/'+TWITCH+'">WATCH LIVE ON TWITCH</a><a id="twApp" href="twitch://stream/'+TWITCH+'">OPEN IN TWITCH APP</a><div id="twNote">18+ streams cannot play in the small player (Twitch blocks it). Tap Watch Live: it opens Twitch inside the app, and your sign-in is remembered.</div>';
   box.parentNode.insertBefore(bar,box.nextSibling);
-  $('twLogin').addEventListener('click',function(e){ e.preventDefault(); window.location.href='https://www.twitch.tv/login'; });
-  $('twApp').addEventListener('click',function(e){ e.preventDefault(); var t=setTimeout(function(){window.open('https://www.twitch.tv/'+TWITCH,'_system');},900); window.location.href='twitch://stream/'+TWITCH; document.addEventListener('visibilitychange',function(){clearTimeout(t);},{once:true}); });
+  $('twLogin').addEventListener('click',function(e){ e.preventDefault();
+    var B=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.Browser;
+    if(B&&B.open) B.open({url:'https://www.twitch.tv/'+TWITCH,toolbarColor:'#070405'}); else window.open('https://www.twitch.tv/'+TWITCH,'_blank'); });
+  $('twApp').addEventListener('click',function(e){ e.preventDefault(); var t=setTimeout(function(){window.open('https://www.twitch.tv/'+TWITCH,'_blank');},900); document.addEventListener('visibilitychange',function(){clearTimeout(t);},{once:true}); window.location.href='twitch://stream/'+TWITCH; });
 })();
 function getText(url,ms){
   var c=new AbortController(), t=setTimeout(function(){c.abort();},ms||8000);

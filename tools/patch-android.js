@@ -50,4 +50,20 @@ public class MainActivity extends BridgeActivity {
     }
 }
 `);
+// 4. fixed signing key + rising version number so new builds install OVER the old app
+fs.copyFileSync(path.join('resources', 'hs-debug.keystore'), path.join('android', 'app', 'hs-debug.keystore'));
+const gp = path.join('android', 'app', 'build.gradle');
+let g = fs.readFileSync(gp, 'utf8');
+g = g.replace(/android\s*\{/, `android {
+    signingConfigs {
+        debug {
+            storeFile file('hs-debug.keystore')
+            storePassword 'android'
+            keyAlias 'hsdebug'
+            keyPassword 'android'
+        }
+    }`);
+g = g.replace(/versionCode\s+\d+/, 'versionCode (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()');
+if (!g.includes('hs-debug.keystore') || !g.includes('GITHUB_RUN_NUMBER')) throw new Error('build.gradle patch failed');
+fs.writeFileSync(gp, g);
 console.log('android project patched');

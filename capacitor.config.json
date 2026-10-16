@@ -13,19 +13,6 @@
   },
   "server": {
     "hostname": "hunterseriph.app",
-    "androidScheme": "https",
-    "allowNavigation": [
-      "*.twitch.tv",
-      "twitch.tv",
-      "*.twitchcdn.net",
-      "*.ttvnw.net",
-      "*.twitch.map.fastly.net",
-      "*.google.com",
-      "*.gstatic.com",
-      "*.hcaptcha.com",
-      "*.arkoselabs.com",
-      "*.funcaptcha.com",
-      "*.recaptcha.net"
-    ]
+    "androidScheme": "https"
   }
 }
