@@ -27,4 +27,27 @@ if (fs.existsSync(stylesPath)) {
   fs.writeFileSync(stylesPath, s);
   console.log('styles.xml patched');
 } else console.warn('WARNING: styles.xml not found');
+// 3. let embedded Twitch/YouTube players share the sign-in cookie (needed for 18+ streams)
+const javaDir = path.join('android', 'app', 'src', 'main', 'java', 'com', 'hunterseriph', 'app');
+write(path.join(javaDir, 'MainActivity.java'), `package com.hunterseriph.app;
+
+import android.os.Bundle;
+import android.webkit.CookieManager;
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        CookieManager cm = CookieManager.getInstance();
+        cm.setAcceptCookie(true);
+        cm.setAcceptThirdPartyCookies(getBridge().getWebView(), true);
+    }
+    @Override
+    public void onPause() {
+        super.onPause();
+        CookieManager.getInstance().flush();
+    }
+}
+`);
 console.log('android project patched');
