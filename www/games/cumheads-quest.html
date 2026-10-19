@@ -167,6 +167,35 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(30px,8vw,46px);lin
   #hint{display:block;position:absolute;left:0;right:0;bottom:calc(8px + env(safe-area-inset-bottom,0px));text-align:center;font-family:var(--pixel);font-size:8px;line-height:1.6;color:var(--ash);pointer-events:none}
 }
 @media (max-height:340px){ #cross{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px)} #bA{width:80px;height:80px} #bB{width:66px;height:66px} }
+
+/* ---- phone fixes: close button, compact landscape menus, touch pad over menus ---- */
+@media (min-width:641px){#ffClose{display:block;position:absolute;right:0;top:-2px;z-index:4;min-height:34px;padding:0 14px}#ffTabs{padding-right:104px}}
+#shopList,#lvlList,#ffList,.ffside{-webkit-overflow-scrolling:touch}
+.ffRow .nm{overflow:visible;text-overflow:clip;white-space:normal}
+.ffRow{min-height:34px}
+.ffstatbig{padding-bottom:30px}
+@media (max-height:520px){
+  #inv,#shop,#lvl{padding:6px 10px}
+  #shop h2,#lvl h2{font-size:22px}#shop,#lvl{gap:4px}
+  .smallbtn{min-height:34px}
+  .ffwrap{gap:5px}
+  #ffDesc{min-height:0;padding:6px 10px}.ffd2{font-size:7px;line-height:1.4}
+  #ffChar{padding:6px 8px;gap:6px}.ffPort{width:30px;height:42px}.ffcard.pet .ffPort{height:32px}
+  .ffRow{padding-top:6px;padding-bottom:6px}
+  #ffTabs{padding-top:3px;padding-bottom:3px}
+  #shopList,#lvlList{padding:8px}
+}
+@media (min-aspect-ratio:1/1){
+  #app.menu #pad{z-index:9}
+  #app.menu #cross{grid-template-columns:repeat(3,40px);grid-template-rows:repeat(3,40px)}
+  #app.menu #bA{width:68px;height:68px}#app.menu #bB{width:58px;height:58px}
+  #app.menu #inv,#app.menu #shop,#app.menu #lvl{padding-left:170px;padding-right:170px}
+  .ffwrap{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}
+}
+@media (max-aspect-ratio:1/1){
+  .ffwrap[data-m=main]{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .ffwrap[data-m=main] .ffRow{font-size:8px;padding-left:30px}
+}
 </style>
 
 <div id="app">
@@ -865,17 +894,48 @@ el('shopClose').addEventListener('click', function () { sfx.click(); if (G.sBack
 
 /* ----- drawing ----- */
 function drawShopDecor(camx, camy) {
-  var r = rooms[0], sd = SHOPS[G.shop], x0 = r.x * T - camx, y0 = r.y * T - camy;
-  ctx.fillStyle = sd.col; ctx.globalAlpha = 0.10; ctx.fillRect(x0, y0, r.w * T, r.h * T); ctx.globalAlpha = 1;
-  for (var i = 0; i < r.w * 2; i++) { ctx.fillStyle = i % 2 ? sd.col : sd.col2; ctx.fillRect(x0 + i * (T / 2), y0, T / 2, 8); ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(x0 + i * (T / 2), y0 + 8, T / 2, 1); }
-  if (G.inn) { var ex = (r.cx) * T - camx, ey = (r.y + r.h) * T - camy; ctx.fillStyle = '#12040a'; ctx.fillRect(ex + 2, ey, T - 4, T); ctx.fillStyle = sd.col; ctx.fillRect(ex + 4, ey + 2, T - 8, T - 2); ctx.fillStyle = '#2a0a14'; ctx.fillRect(ex + 6, ey + 4, T - 12, T - 4); text('EXIT', Math.round(ex + T / 2), Math.round(ey + 17), 'center', '#ffe36a', 5); }
-  if (G.shop !== 'club' && FACART[G.shop]) { var fa = facadeFor(G.shop); if (fa) ctx.drawImage(fa, Math.round(x0 + 6), Math.round(y0 + 2 * T + 6 - fa.height)); }
-  if (BILLB[G.shop]) { var bf = pxCanvas(BILLB[G.shop]); if (bf) ctx.drawImage(bf, Math.round(x0 + r.w * T - bf.width - 6), Math.round(y0 + 2 * T + 6 - bf.height)); }
+  var r = rooms[0], sd = SHOPS[G.shop], x0 = Math.round(r.x * T - camx), y0 = Math.round(r.y * T - camy), W = r.w * T, H = r.h * T, i, j, id = G.shop;
+  function rc(c, x, y, w, h) { ctx.fillStyle = c; ctx.fillRect(Math.round(x0 + x), Math.round(y0 + y), w, h); }
+  function disc(c, x, y, rad) { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x0 + x, y0 + y, rad, 0, 6.2832); ctx.fill(); }
+  /* floor: planks + a rug */
+  ctx.globalAlpha = 0.12; rc(sd.col, 0, 0, W, H); ctx.globalAlpha = 1;
+  for (j = 2; j < r.h; j++) for (i = 0; i < r.w; i++) { if ((i + j) % 2) { ctx.globalAlpha = 0.07; rc('#fff', i * T, j * T, T, T); ctx.globalAlpha = 1; } }
+  rc('rgba(0,0,0,0.22)', 3 * T - 2, 3 * T - 2, 5 * T + 4, 3 * T + 4); rc(sd.col, 3 * T, 3 * T, 5 * T, 3 * T); rc('#12040a', 3 * T + 3, 3 * T + 3, 5 * T - 6, 3 * T - 6); rc(sd.col2, 3 * T + 5, 3 * T + 5, 5 * T - 10, 3 * T - 10); ctx.globalAlpha = 0.55; rc('#12040a', 3 * T + 8, 3 * T + 8, 5 * T - 16, 3 * T - 16); ctx.globalAlpha = 1;
+  for (i = 0; i < 5; i++) rc(sd.col, 3 * T + 14 + i * 22, 3 * T + 13, 8, 3);
+  /* back wall: bricks, wainscot, awning */
+  rc('#1c0b11', 0, 0, W, 2 * T); for (j = 0; j < 6; j++) for (i = 0; i < 14; i++) rc(j % 2 ? '#26111a' : '#220f17', i * 22 + (j % 2 ? -11 : 0), 10 + j * 8, 20, 6);
+  rc('#12040a', 0, 2 * T - 6, W, 6); rc(sd.col, 0, 2 * T - 4, W, 2);
+  for (i = 0; i < r.w * 2; i++) { rc(i % 2 ? sd.col : sd.col2, i * (T / 2), 0, T / 2, 9); rc('rgba(0,0,0,0.3)', i * (T / 2), 9, T / 2, 1); disc(i % 2 ? sd.col : sd.col2, i * (T / 2) + T / 4, 9, T / 4 - 1); }
+  for (i = 0; i < r.w; i++) { var lx = i * T + T / 2, sw = Math.sin(G.t * 2 + i) * 1.2; rc('#12040a', lx - 4, 12, 1, 4); disc('rgba(255,207,96,0.22)', lx + sw - 3, 21, 6); disc('#ffcf60', lx + sw - 3, 20, 2.4); }
+  /* shelves with the real goods on them */
+  var goods = []; (G.shopStock || []).forEach(function (s) { if (ITEMS[s[0]]) goods.push(s[0]); });
+  var pz = (sd.svc && sd.svc[0] && sd.svc[0].prize) || []; pz.forEach(function (p) { if (ITEMS[p[0]]) goods.push(p[0]); });
+  if (!goods.length) goods = ['tonic', 'bun', 'scrollMap'];
+  [[10, 5], [W - 10 - 4 * 24, 5]].forEach(function (sh, si) {
+    rc('#12040a', sh[0] - 3, 40, 4 * 24 + 6, 4); rc('#6a3a1e', sh[0] - 2, 38, 4 * 24 + 4, 3); rc('#12040a', sh[0] - 3, 22, 4 * 24 + 6, 3); rc('#6a3a1e', sh[0] - 2, 20, 4 * 24 + 4, 2);
+    for (var k = 0; k < 4; k++) { var gid = goods[(si * 4 + k) % goods.length], ic = IC[gid]; if (ic) { ctx.drawImage(ic, x0 + sh[0] + k * 24 + 2, y0 + 23, 16, 16); } var g2 = goods[(si * 4 + k + 2) % goods.length], i2 = IC[g2]; if (i2 && k % 2 === 0) ctx.drawImage(i2, x0 + sh[0] + k * 24 + 2, y0 + 5 + 17 - 17 + 1 - 1, 0, 0); }
+  });
+  /* sign */
+  var pw = Math.min(W - 120, sd.name.length * 6 + 18), px = (W - pw) / 2;
+  rc('#12040a', px - 4, 10, 1, 8); rc('#12040a', px + pw + 3, 10, 1, 8);
+  rc('#12040a', px - 1, 17, pw + 2, 15); rc('#6a3a1e', px, 18, pw, 13); rc(sd.col, px + 2, 20, pw - 4, 9);
+  text(sd.name, Math.round(x0 + W / 2), y0 + 27, 'center', '#12040a', 6);
+  if (BILLB[id]) { var bf = pxCanvas(BILLB[id]); if (bf) ctx.drawImage(bf, Math.round(x0 + W - bf.width - 6), Math.round(y0 + 2 * T + 6 - bf.height)); }
+  /* theme props in the corners */
+  function barrel(x, y) { rc('rgba(0,0,0,0.3)', x - 1, y + 20, 18, 4); rc('#12040a', x, y + 2, 16, 20); rc('#7a4a22', x + 1, y + 3, 14, 18); rc('#4a2a12', x + 1, y + 8, 14, 2); rc('#4a2a12', x + 1, y + 15, 14, 2); rc('#9a6a38', x + 3, y + 3, 2, 18); }
+  function crate(x, y) { rc('rgba(0,0,0,0.3)', x - 1, y + 17, 20, 4); rc('#12040a', x, y, 18, 19); rc('#8a5a2a', x + 1, y + 1, 16, 17); rc('#5a3a1a', x + 1, y + 8, 16, 2); rc('#5a3a1a', x + 8, y + 1, 2, 17); }
+  function plant(x, y, c) { rc('#12040a', x + 3, y + 12, 11, 9); rc('#8a3a22', x + 4, y + 13, 9, 7); disc(c, x + 8, y + 8, 6); disc('rgba(255,255,255,0.18)', x + 6, y + 6, 2.4); }
+  function candle(x, y, fl) { rc('#12040a', x, y + 6, 6, 10); rc('#f1e7d0', x + 1, y + 7, 4, 8); disc('rgba(255,180,60,0.25)', x + 3, y + 3, 8); disc(fl || '#ffd060', x + 3, y + 3 + Math.sin(G.t * 9 + x), 2); }
+  function pot(x, y, c) { rc('rgba(0,0,0,0.3)', x - 1, y + 20, 22, 4); rc('#12040a', x, y + 6, 20, 15); rc('#3a3a44', x + 1, y + 7, 18, 13); rc('#6a6a76', x + 1, y + 7, 18, 2); rc(c, x + 2, y + 5, 16, 3); for (var b = 0; b < 3; b++) disc(c, x + 5 + b * 5, y + 2 - ((G.t * 6 + b * 2) % 4), 1.4); }
+  var ey = 2 * T + 4, rx = W - T + 6;
+  if (id === 'brew') { pot(6, ey - 2, '#7aff6a'); barrel(rx - 20, ey); plant(rx, ey + 24, '#5aaa3a'); candle(8, ey + 36, '#7aff6a'); }
+  else if (id === 'jessiah') { pot(6, ey - 2, '#c8d8ff'); crate(rx - 2, ey + 2); candle(rx - 14, ey + 30); barrel(6, ey + 28); }
+  else if (id === 'nattyboro') { rc('#12040a', 4, ey + 4, 22, 14); rc('#3a3a46', 5, ey + 5, 20, 8); rc('#6a6a7a', 7, ey + 3, 14, 3); candle(rx, ey, '#ff2a4a'); candle(rx - 12, ey + 14, '#ff2a4a'); rc('rgba(224,64,122,0.5)', 9, ey + 8, 12, 2); barrel(rx - 4, ey + 28); }
+  else if (id === 'judgement') { candle(8, ey + 2, '#fff6d8'); candle(rx, ey + 2, '#c070ff'); rc('#12040a', 4, ey + 20, 24, 14); rc('#f4f4f8', 5, ey + 21, 11, 12); rc('#18181e', 16, ey + 21, 11, 12); disc('#18181e', 10, ey + 24, 2); disc('#f4f4f8', 21, ey + 30, 2); plant(rx - 2, ey + 26, '#c8c8e0'); }
+  else if (id === 'ali') { for (i = 0; i < 5; i++) { rc('#12040a', 4 + i * 5, 12, 1, 8 + (i % 2) * 4); disc('#f6f6ea', 4 + i * 5, 22 + (i % 2) * 4, 2.6); } crate(rx - 2, ey + 4); barrel(6, ey + 24); candle(rx, ey + 34, '#ffd060'); }
+  else { barrel(6, ey); crate(rx - 2, ey + 4); plant(8, ey + 28, '#3a8a3a'); candle(rx, ey + 34); }
+  if (G.inn) { var ex = (r.cx) * T - camx, eyy = (r.y + r.h) * T - camy; ctx.fillStyle = '#12040a'; ctx.fillRect(ex + 2, eyy, T - 4, T); ctx.fillStyle = sd.col; ctx.fillRect(ex + 4, eyy + 2, T - 8, T - 2); ctx.fillStyle = '#2a0a14'; ctx.fillRect(ex + 6, eyy + 4, T - 12, T - 4); text('EXIT', Math.round(ex + T / 2), Math.round(eyy + 17), 'center', '#ffe36a', 5); }
   if (sd.door) { var dx = G.doorX * T - camx, dy = (r.y + 2) * T - camy; ctx.fillStyle = '#12040a'; ctx.fillRect(dx + 3, dy + 2, T - 6, T - 2); ctx.fillStyle = sd.col; ctx.fillRect(dx + 5, dy + 4, T - 10, T - 6); ctx.fillStyle = '#2a0a14'; ctx.fillRect(dx + 7, dy + 6, T - 14, T - 8); ctx.fillStyle = '#ffe36a'; ctx.fillRect(dx + T - 9, dy + 16, 2, 2); }
-  if (G.shop !== 'club' && FACART[G.shop]) return;
-  var pw = Math.min(r.w * T - 8, sd.name.length * 6 + 14), px = x0 + (r.w * T - pw) / 2;
-  ctx.fillStyle = '#12040a'; ctx.fillRect(px - 1, y0 + 9, pw + 2, 13); ctx.fillStyle = sd.col; ctx.fillRect(px, y0 + 10, pw, 11);
-  text(sd.name, Math.round(x0 + r.w * T / 2), y0 + 19, 'center', '#12040a', 6);
 }
 function drawPosters(camx, camy) {
   for (var i = 0; i < G.posters.length; i++) {
@@ -1173,9 +1233,9 @@ function procFacade(o) {
   var dx = (w >> 1) - 5; R(g, OUT, dx, h + dy - 22, 10, 22); R(g, o.door, dx + 1, h + dy - 21, 8, 21); R(g, '#ffe36a', dx + 7, h + dy - 11, 1, 2);
   return c;
 }
-var FACART = { t: 't', beebs: 'beebs', amy: 'amy', greebo: 'greebo', saba: 'saba', tb: 'tb', cafe: 'cafe', arcade: 'arcade', club: 'club' };
+var FACART = { t: 't', beebs: 'beebs', amy: 'amy', greebo: 'greebo', tb: 'tb', cafe: 'cafe', arcade: 'arcade', club: 'club' };
 var FACCACHE = {};
-var FACLAB = { joff: ['JOFF\'S', 'PIZZERIA'], bonjo: ['BONJO\'S', 'BOUTIQUE'], pulsar: ['PULSAR', 'BEATS'], sanct: ['SPERMAID', 'SANCTUM'] };
+var FACLAB = { joff: ['JOFF\'S', 'PIZZERIA'], bonjo: ['BONJO\'S', 'BOUTIQUE'], pulsar: ['PULSAR', 'BEATS'], sanct: ['SPERMAID', 'SANCTUM'], saba: ['SABA\'S', 'HEMPORIUM'] };
 function facadeFor(id) {
   if (FACART[id]) return pxCanvas(FACART[id]);
   if (!FACCACHE[id]) {
@@ -1184,7 +1244,7 @@ function facadeFor(id) {
   }
   return FACCACHE[id];
 }
-var BILLB = { tb: 'pills', amy: 'bbq', cafe: 'crackers' };
+var BILLB = { tb: 'pills', amy: 'bbq', cafe: 'crackers', saba: 'saba' };
 function getNpcSpr(k) { if ((k === 'spermaid' || k === 'greebo') && typeof newFront === 'function') return newFront(k); if (typeof vecSprite === 'function' && vecSprite(k, 'd', false)) return vecSprite(k, 'd', false); return typeof shadedNpc === 'function' && NPCSPR[k] ? shadedNpc(k) : NPCSPR[k]; }
 var CABS = {};
 function cabSprite(game) {
@@ -2240,14 +2300,14 @@ HSPEC.nattyboro = { skin: '#ece0e4', top: '#1a1018', btm: '#16101a', shoe: '#0e0
   hair: function (g, v) { var H = '#0c0a10'; hairCap(g, H, v); if (v === 'd') vPoly(g, [[9, 8], [14, 11], [19, 8], [19, 6], [9, 6]], H); strands(g, '#2a2a3a', v === 'u' ? [[11, 8, 11, 14], [16, 8, 16, 14]] : [[12, 5, 11, 8]]); },
   top2: function (g, v) { if (v === 'd') { vPoly(g, [[8.6, 16.4], [11.4, 16], [10.4, 20.6], [7.4, 19]], '#8a0c20'); vPoly(g, [[19.4, 16.4], [16.6, 16], [17.6, 20.6], [20.6, 19]], '#8a0c20'); } else vPoly(g, [[8.4, 16.2], [19.6, 16.2], [19.4, 19], [8.6, 19]], '#2a1822'); },
   px: function (g, v) { if (v === 'd') { px1(g, '#ff2030', 11, 10, 1, 2); px1(g, '#ff2030', 16, 10, 1, 2); px1(g, '#3a1018', 12, 14, 4, 1); px1(g, '#fff', 12, 15); px1(g, '#fff', 15, 15); } else if (v === 's') { px1(g, '#3a1018', 18, 14, 2, 1); px1(g, '#fff', 18, 15); } } };
-HSPEC.judgement = { skin: '#e4d8f0', top: '#f4f4f8', btm: '#2a2a34', shoe: '#18181e', noLegs: true, mouth: '#8a5a7a', eye: '#6a4aa0', brow: '#b8b8c8',
+HSPEC.judgement = { skin: '#f6eee8', top: '#f4f4f8', btm: '#2a2a34', shoe: '#18181e', noLegs: true, mouth: '#8a5a7a', eye: '#6a4aa0', brow: '#b8b8c8',
   torso: function (g, v) { if (v === 's') { vPoly(g, [[10.8, 17.5], [14, 17.5], [14, 33.6], [6.4, 33.6]], '#f4f4f8'); vPoly(g, [[14, 17.5], [17.8, 17.5], [21.8, 33.6], [14, 33.6]], '#18181e'); } else { vPoly(g, [[8.8, 17.5], [14, 17.5], [14, 33.6], [4.4, 33.6]], '#f4f4f8'); vPoly(g, [[14, 17.5], [19.2, 17.5], [23.6, 33.6], [14, 33.6]], '#18181e'); } vEll(g, 11, 34.6, 2.6, 1.2, '#18181e'); vEll(g, 17, 34.6, 2.6, 1.2, '#18181e'); },
   over: function (g, v) { vLine(g, v === 's' ? 10.8 : 8.8, 26, v === 's' ? 7 : 5, 33, 0.4, '#c8c8d8'); },
   back: function (g, v) { if (v === 's') vPoly(g, [[8, 8], [15, 5], [14, 11], [13.4, 27], [8, 27]], '#d8d8e8'); else vPoly(g, [[7.6, 8], [20.4, 8], [21, 27], [7, 27]], '#d8d8e8'); },
   hair: function (g, v) { var H = '#d8d8e8'; if (v === 'u') { vEll(g, 14, 11, 6.2, 6.4, H); vPoly(g, [[7.6, 10], [20.4, 10], [20.8, 26], [7.2, 26]], H); } else hairCap(g, H, v); if (v === 'd') { vPoly(g, [[8, 8], [10.8, 8], [10.4, 20], [7.8, 20]], H); vPoly(g, [[17.2, 8], [20, 8], [20.2, 20], [17.6, 20]], H); } strands(g, '#f4f4fc', v === 'u' ? [[11, 9, 10.6, 25], [14, 8, 14, 26], [17, 9, 17.4, 25]] : [[12, 5, 11, 8]]); g.strokeStyle = '#ffd860'; g.lineWidth = 0.8; g.beginPath(); g.ellipse(v === 's' ? 14 : 14, 1.8, 4.6, 1.2, 0, 0, 6.2832); g.stroke(); },
   prop: function (g, v) { var x = v === 's' ? 17.4 : 22; vPoly(g, [[x, 21], [x + 3.4, 21], [x + 3.4, 27], [x, 27]], '#f1e7d0'); vEll(g, x + 1.7, 21, 1.8, 0.8, '#e0d4b0'); vEll(g, x + 1.7, 27, 1.8, 0.8, '#e0d4b0'); vLine(g, x + 0.6, 22.6, x + 2.8, 22.6, 0.4, '#6a1a8a'); vLine(g, x + 0.6, 24, x + 2.8, 24, 0.4, '#6a1a8a'); },
   px: function (g, v) { if (v === 'd') { px1(g, '#6a4aa0', 11, 11, 3, 1); px1(g, '#6a4aa0', 15, 11, 3, 1); } else if (v === 's') px1(g, '#6a4aa0', 17, 11, 3, 1); } };
-HSPEC.ali = { skin: '#c49470', top: '#4a8a3a', btm: '#3a3a2a', shoe: '#2a1a10', mouth: '#3a1a10', eye: '#1a1010', brow: '#1a1410', sleeve: '#4a8a3a', wide: 0.4,
+HSPEC.ali = { skin: '#5a3420', top: '#4a8a3a', btm: '#3a3a2a', shoe: '#2a1a10', mouth: '#3a1a10', eye: '#1a1010', brow: '#1a1410', sleeve: '#4a8a3a', wide: 0.4,
   over: function (g, v) { if (v === 's') vPoly(g, [[11.4, 19], [18, 19], [18, 27], [11, 27]], '#f4f0e0'); else vPoly(g, [[9.4, 19], [18.6, 19], [19, 27], [9, 27]], '#f4f0e0'); if (v !== 'u') { vEll(g, v === 's' ? 14.6 : 14, 23, 2.1, 2.1, '#f6f6ea'); vPoly(g, [[v === 's' ? 14.6 : 14, 19.6], [v === 's' ? 15.6 : 15, 21.4], [v === 's' ? 13.6 : 13, 21.4]], '#f6f6ea'); } else vPoly(g, [[12.6, 24], [15.4, 24], [16, 27.6], [12, 27.6]], '#d8d0b0'); },
   hair: function (g, v) { var H = '#1a1410'; hairCap(g, H, v); [[8.6, 6], [11, 3.8], [14, 3], [17, 3.8], [19.4, 6]].forEach(function (p) { vEll(g, p[0], p[1], 2, 2, H); }); },
   top2: function (g, v) { vPoly(g, [[8.4, 6.2], [19.6, 6.2], [19.6, 8.2], [8.4, 8.2]], '#3a8a2a'); },
@@ -2314,6 +2374,43 @@ function deepSetup() { G.deep = META.blum >= 10; }
 function petForChar() { if (!P.pet) return; var want = isCh('amy') ? 'frog' : (META.pets[META.petSel] ? META.petSel : 'gloop'); if (P.pet.id !== want) initPet(); }
 function bossLootExtra() {}
 function garlicTick2() {}
+
+/* ----- biome traps ----- */
+var TRAPPOOL = [['spike', 'spike', 'warp', 'hunger'], ['spike', 'warp', 'curse', 'hunger'], ['water', 'water', 'warp', 'hunger'], ['poison', 'poison', 'spike', 'hunger'], ['fire', 'fire', 'spike', 'warp'], ['ice', 'ice', 'spike', 'warp'], ['poison', 'mud', 'mud', 'hunger'], ['mirror', 'mirror', 'warp', 'spike'], ['blood', 'blood', 'spike', 'curse'], ['void', 'void', 'warp', 'hunger']];
+var TRAPALL = ['spike', 'warp', 'hunger', 'poison', 'tet', 'water', 'ice', 'fire', 'mud', 'mirror', 'blood', 'void', 'curse'];
+var TRAPCOL = { spike: '#e0202a', warp: '#7a8aff', hunger: '#ff9a40', poison: '#7dff3a', tet: '#9acd32', water: '#4ad0ff', ice: '#b8e8ff', fire: '#ff7a20', mud: '#9a7a3a', mirror: '#ff78f0', blood: '#ff2030', void: '#a0a0ff', curse: '#c070ff' };
+function trapKind(n) { return n > 50 ? pick(TRAPALL) : pick(TRAPPOOL[Math.min(8, biomeIdx(n))]); }
+function extTrap(t) {
+  var k = t.k, f = G.floor;
+  if (k === 'poison') { say('Poison gas hisses out!', '#7dff3a'); P.pois = Math.max(P.pois || 0, 8); P.poisD = 1 + Math.floor(f / 12); sfx.hurt(); pop(P.x, P.y, 'POISON', '#7dff3a'); }
+  else if (k === 'tet') { say('Rusty spikes! Tetanus!', '#7dff3a'); hurtPlayer(2 + Math.floor(f / 4), 'a rusty trap'); P.tet = 40; }
+  else if (k === 'water') { var lost = Math.floor(G.gold * 0.08); G.gold -= lost; P.dizzy = Math.max(P.dizzy || 0, 4); say('A flood trap! The water sweeps you around' + (lost ? ' and ' + lost + ' drops float away.' : '.'), '#4ad0ff'); pop(P.x, P.y, 'SPLASH', '#4ad0ff'); sfx.hurt(); for (var i = 0; i < 12; i++) fx.push({ k: 'p', x: P.x + 0.5, y: P.y + 0.5, vx: (Math.random() - 0.5) * 6, vy: -Math.random() * 4, age: 0, c: '#4ad0ff' }); }
+  else if (k === 'ice') { P.frozen = 3; say('An ice trap! You are frozen in place.', '#b8e8ff'); pop(P.x, P.y, 'FROZEN', '#b8e8ff'); sfx.hurt(); hurtPlayer(2 + Math.floor(f / 6), 'an ice trap'); }
+  else if (k === 'fire') { P.pois = Math.max(P.pois || 0, 4); P.poisD = 2 + Math.floor(f / 8); say('A fire trap! You are set alight.', '#ff7a20'); pop(P.x, P.y, 'BURN', '#ff7a20'); sfx.hurt(); G.shake = 4; }
+  else if (k === 'mud') { P.frozen = 2; say('You sink into the marsh mud and get stuck.', '#9a7a3a'); pop(P.x, P.y, 'STUCK', '#9a7a3a'); }
+  else if (k === 'mirror') { P.dizzy = Math.max(P.dizzy || 0, 6); say('Mirrors flash! You see a dozen of yourself and stumble off.', '#ff78f0'); teleport(); }
+  else if (k === 'blood') { var bd = Math.max(3, Math.ceil(P.mhp * 0.12)); say('A blood trap drains you!', '#ff2030'); hurtPlayer(bd, 'a blood trap'); }
+  else if (k === 'void') { P.belly = Math.max(0, P.belly - 35); say('A void trap! Your belly is drained and the world tears.', '#a0a0ff'); teleport(); }
+  else if (k === 'curse') { P.belly = Math.max(0, P.belly - 15); P.dizzy = Math.max(P.dizzy || 0, 5); say('A curse trap! You feel hollow.', '#c070ff'); pop(P.x, P.y, 'CURSED', '#c070ff'); }
+  else return false;
+  return true;
+}
+function drawTrapExt(t, sx, sy) {
+  var col = TRAPCOL[t.k] || '#ff9a40', k = t.k, cx = sx + 14, cy = sy + 14, i;
+  ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 2;
+  if (k === 'water') { for (i = 0; i < 2; i++) { ctx.beginPath(); ctx.arc(cx, cy, 4 + i * 4 + (Math.sin(G.t * 3) + 1), 0, 6.28); ctx.stroke(); } ctx.fillRect(cx - 1, cy - 1, 2, 2); }
+  else if (k === 'ice') { ctx.lineWidth = 2; for (i = 0; i < 3; i++) { var a = i * 1.047; ctx.beginPath(); ctx.moveTo(cx - Math.cos(a) * 8, cy - Math.sin(a) * 8); ctx.lineTo(cx + Math.cos(a) * 8, cy + Math.sin(a) * 8); ctx.stroke(); } }
+  else if (k === 'fire') { ctx.beginPath(); ctx.moveTo(cx - 6, cy + 8); ctx.lineTo(cx - 3, cy - 2 - Math.sin(G.t * 9) * 2); ctx.lineTo(cx, cy + 3); ctx.lineTo(cx + 3, cy - 8); ctx.lineTo(cx + 6, cy + 8); ctx.fill(); ctx.fillStyle = '#ffe36a'; ctx.fillRect(cx - 2, cy + 3, 4, 5); }
+  else if (k === 'poison') { for (i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(cx - 5 + i * 5, cy + 4 - ((G.t * 8 + i * 3) % 10), 2.4, 0, 6.28); ctx.fill(); } ctx.fillRect(cx - 6, cy + 5, 12, 3); }
+  else if (k === 'tet') { ctx.fillStyle = '#9acd32'; ctx.fillRect(cx - 6, cy + 4, 12, 3); for (i = 0; i < 3; i++) { ctx.beginPath(); ctx.moveTo(cx - 6 + i * 5, cy + 4); ctx.lineTo(cx - 4 + i * 5, cy - 6); ctx.lineTo(cx - 2 + i * 5, cy + 4); ctx.fill(); } }
+  else if (k === 'mud') { ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.ellipse(cx, cy + 3, 10, 6, 0, 0, 6.28); ctx.fill(); ctx.globalAlpha = 1; ctx.fillStyle = '#5a4a1a'; ctx.beginPath(); ctx.arc(cx - 3, cy + 2 - (Math.sin(G.t * 3) + 1) * 1.5, 2, 0, 6.28); ctx.arc(cx + 4, cy + 4, 1.6, 0, 6.28); ctx.fill(); }
+  else if (k === 'mirror') { ctx.strokeRect(cx - 6, cy - 8, 12, 16); ctx.beginPath(); ctx.moveTo(cx - 4, cy + 4); ctx.lineTo(cx + 3, cy - 5); ctx.stroke(); }
+  else if (k === 'blood') { ctx.beginPath(); ctx.moveTo(cx, cy - 9); ctx.quadraticCurveTo(cx + 8, cy + 2, cx, cy + 8); ctx.quadraticCurveTo(cx - 8, cy + 2, cx, cy - 9); ctx.fill(); }
+  else if (k === 'void') { ctx.beginPath(); ctx.arc(cx, cy, 8, 0, 6.28); ctx.stroke(); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(cx, cy, 5 + Math.sin(G.t * 4), 0, 6.28); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 6.28); ctx.stroke(); }
+  else if (k === 'curse') { ctx.beginPath(); ctx.arc(cx, cy - 2, 6, 0, 6.28); ctx.stroke(); ctx.fillRect(cx - 4, cy + 4, 8, 3); ctx.fillRect(cx - 3, cy - 4, 2, 2); ctx.fillRect(cx + 1, cy - 4, 2, 2); }
+  else { ctx.fillRect(sx + 8, sy + 9, 12, 3); ctx.fillRect(sx + 8, sy + 16, 12, 3); }
+}
+function inMenu() { return G.state === 'inv' || G.state === 'levelup' || !!kbScope(); }
 
 function bossTitle(n) { return BOSSES[n].name; }
 function biomeIdx(n) { return BIOMES.indexOf(biome(n)); }
@@ -2629,7 +2726,7 @@ function genFloor(n) {
   for (var g2 = 0; g2 < rnd(3, 5); g2++) { var r3 = rooms[rnd(0, rooms.length - 1)], c3 = floorCell(r3); if (c3) gitems.push({ x: c3.x, y: c3.y, id: 'gold', amt: rnd(6, 14) * n }); }
   for (var tk = 0, tkn = rnd(1, 2); tk < tkn; tk++) { var rt = rooms[rnd(0, rooms.length - 1)], ct = floorCell(rt); if (ct) gitems.push({ x: ct.x, y: ct.y, id: 'token', amt: 1 + Math.floor(n / 10) }); }
   // traps
-  for (var tr = 0, trn = n > 50 ? 9 + rnd(0, 4) : 1 + Math.floor(n / 5); tr < trn; tr++) { var r4 = rooms[rnd(0, rooms.length - 1)], c4 = floorCell(r4, { x: P.x, y: P.y }); if (c4) traps.push({ x: c4.x, y: c4.y, k: pick(n > 50 ? ['spike', 'warp', 'hunger', 'poison', 'tet'] : ['spike', 'warp', 'warp', 'hunger', 'hunger']), shown: false }); }
+  for (var tr = 0, trn = n > 50 ? 9 + rnd(0, 4) : 1 + Math.floor(n / 5); tr < trn; tr++) { var r4 = rooms[rnd(0, rooms.length - 1)], c4 = floorCell(r4, { x: P.x, y: P.y }); if (c4) traps.push({ x: c4.x, y: c4.y, k: trapKind(n), shown: false }); }
   G.banner = { age: 0, a: 'B' + n + 'F', b: boss ? 'BOSS · ' + bossTitle(n) : biome(n).n, boss: boss };
   petArrive(); updateVis(); camSnap(); music.play(trackFor(n), boss);
 }
@@ -2771,8 +2868,7 @@ function stepOnto() {
     t.shown = true;
     if (t.k === 'spike') { say('Spikes shoot up!', '#ff2630'); hurtPlayer(4 + G.floor, 'a spike trap'); }
     else if (t.k === 'warp') { say('A warp trap! You are flung elsewhere.', '#7a8aff'); teleport(); }
-    else if (t.k === 'poison') { say('A poison dart trap!', '#7dff3a'); P.pois = Math.max(P.pois || 0, 8); P.poisD = 1 + Math.floor(G.floor / 12); sfx.hurt(); }
-    else if (t.k === 'tet') { say('Rusty spikes! Tetanus!', '#7dff3a'); hurtPlayer(2 + Math.floor(G.floor / 4), 'a rusty trap'); P.tet = 40; }
+    else if (extTrap(t)) { }
     else { say('A gnawing trap! Your belly shrinks.', '#ff9a40'); P.belly = Math.max(0, P.belly - 25); sfx.hurt(); }
   }
   if (G.stairs && P.x === G.stairs.x && P.y === G.stairs.y && map[idx(P.x, P.y)] === 2) say('Stairs down. Press A to descend.', '#ffe36a');
@@ -2781,6 +2877,7 @@ function teleport() {
   for (var t = 0; t < 40; t++) { var r = rooms[rnd(0, rooms.length - 1)], c = floorCell(r); if (c) { P.x = c.x; P.y = c.y; P.rx = c.x; P.ry = c.y; petReset(); fx.push({ k: 'ring', x: P.x + 0.5, y: P.y + 0.5, age: 0 }); sfx.scroll && sfx.scroll(); break; } }
 }
 function tryMove(dirKey) {
+  if (P.frozen > 0) { P.frozen--; say('You struggle... (' + P.frozen + ')', '#b8e8ff'); endTurn(0.15); return true; }
   if (P.dizzy > 0 && Math.random() < 0.5) { var dk = Object.keys(DIRS); dirKey = dk[(Math.random() * dk.length) | 0]; }
   var d = DIRS[dirKey]; P.face = dirKey;
   var nx = P.x + d[0], ny = P.y + d[1], m = monAt(nx, ny);
@@ -2791,6 +2888,7 @@ function tryMove(dirKey) {
   stepOnto(); endTurn(0.12); return true;
 }
 function waitOrStairs() {
+  if (P.frozen > 0) { P.frozen--; say('You struggle... (' + P.frozen + ')', '#b8e8ff'); endTurn(0.15); return; }
   if (G.stairs && P.x === G.stairs.x && P.y === G.stairs.y && map[idx(P.x, P.y)] === 2) { descend(); return; }
   if (fireRanged()) return;
   endTurn(0.12);
@@ -3301,8 +3399,10 @@ window.addEventListener('blur', function () { held.u = held.d = held.l = held.r 
 document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 function bindDir(id, k) {
   var node = el(id), pid = null;
-  node.addEventListener('pointerdown', function (e) { e.preventDefault(); pid = e.pointerId; try { node.setPointerCapture(pid); } catch (x) {} dirDown(k); node.classList.add('on'); });
-  function up(e) { if (e.pointerId !== pid) return; pid = null; dirUp(k); node.classList.remove('on'); }
+  var rt = null, rt2 = null;
+  function stopRep() { clearTimeout(rt); clearInterval(rt2); rt = rt2 = null; }
+  node.addEventListener('pointerdown', function (e) { e.preventDefault(); pid = e.pointerId; try { node.setPointerCapture(pid); } catch (x) {} node.classList.add('on'); sfx.init(); if (inMenu()) { menuPress(k); stopRep(); rt = setTimeout(function () { rt2 = setInterval(function () { if (inMenu()) menuPress(k); else stopRep(); }, 130); }, 380); return; } dirDown(k); });
+  function up(e) { if (e.pointerId !== pid) return; pid = null; stopRep(); dirUp(k); node.classList.remove('on'); }
   node.addEventListener('pointerup', up); node.addEventListener('pointercancel', up); node.addEventListener('lostpointercapture', up);
 }
 bindDir('bU', 'u'); bindDir('bD', 'd'); bindDir('bL', 'l'); bindDir('bR', 'r');
@@ -3313,7 +3413,7 @@ function bindAct(id, fn) {
   function up() { node.classList.remove('on'); }
   node.addEventListener('pointerup', up); node.addEventListener('pointercancel', up); node.addEventListener('pointerleave', up);
 }
-bindAct('bA', actA); bindAct('bB', function () { if (G.state === 'aim') cancelAim(); else openInv(); });
+bindAct('bA', function () { if (inMenu()) menuPress('ok'); else actA(); }); bindAct('bB', function () { if (inMenu()) menuPress('back'); else if (G.state === 'aim') cancelAim(); else openInv(); });
 
 /* ---------- update ---------- */
 function camTarget() {
@@ -3340,6 +3440,7 @@ function step(dt) {
   fx = fx.filter(function (f) { return f.age < (f.k === 'p' ? 0.6 : (f.k === 'throw' ? 0.22 : 0.35)); });
   for (i = 0; i < msgs.length; i++) msgs[i].age += dt;
   var ct = camTarget(); G.cam.x += (ct.x - G.cam.x) * Math.min(1, dt * 10); G.cam.y += (ct.y - G.cam.y) * Math.min(1, dt * 10);
+  var mn = inMenu(); if (mn !== !!G.menuOn) { G.menuOn = mn; el('app').classList.toggle('menu', mn); }
   if (G.state === 'play' && P.pts > 0 && G.lock <= 0 && !P.dead) openLevel();
   if (G.state === 'play') {
     var stairsHere = G.stairs && P.x === G.stairs.x && P.y === G.stairs.y && map[idx(P.x, P.y)] === 2;
@@ -3405,10 +3506,10 @@ function drawTile(x, y, sx, sy, isVis) {
 }
 function drawTrap(t, sx, sy) {
   ctx.fillStyle = '#000'; ctx.fillRect(sx + 5, sy + 5, T - 10, T - 10);
-  var col = t.k === 'spike' ? '#e0202a' : t.k === 'warp' ? '#7a8aff' : (t.k === 'poison' || t.k === 'tet') ? '#7dff3a' : '#ff9a40';
+  var col = TRAPCOL[t.k] || '#ff9a40';
   if (t.k === 'spike') { for (var i = 0; i < 3; i++) { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(sx + 6 + i * 6, sy + 22); ctx.lineTo(sx + 9 + i * 6, sy + 8); ctx.lineTo(sx + 12 + i * 6, sy + 22); ctx.fill(); } }
   else if (t.k === 'warp') { ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx + 14, sy + 14, 7, 0, 6.28); ctx.stroke(); ctx.beginPath(); ctx.arc(sx + 14, sy + 14, 3, 0, 6.28); ctx.stroke(); }
-  else { ctx.fillStyle = col; ctx.fillRect(sx + 8, sy + 9, 12, 3); ctx.fillRect(sx + 8, sy + 16, 12, 3); }
+  else drawTrapExt(t, sx, sy);
 }
 function shadow(cx, by, w) { ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.beginPath(); ctx.ellipse(cx, by - 1, w, 3, 0, 0, 6.28); ctx.fill(); }
 function render() {
@@ -3561,7 +3662,7 @@ function frame(ts) {
   render();
 }
 requestAnimationFrame(frame);
-window.__cq = { X: { fireRanged: fireRanged, blumDefeated: blumDefeated, genBonusNatty: genBonusNatty, applyFlier: applyFlier, startAim: startAim, throwItem: throwItem, spawnMon: spawnMon, spawnBoss: spawnBoss, capOf: capOf, healP: healP, hurtPlayer: hurtPlayer, endTurn: endTurn, frogTouch: frogTouch, FLIERS: FLIERS, SHOPS: SHOPS, MONS: MONS, restStop: restStop }, charSprite: charSprite, getNpcSpr: getNpcSpr, ATLAS: ATLAS, imgs: imgs, SP: SP, IC: IC, ITEMS: ITEMS, step: step, pAtk: pAtk, pDef: pDef, pBlock: pBlock, G: G, get P() { return P; }, get mons() { return mons; }, get map() { return map; }, get items() { return gitems; }, start: startGame, tryMove: tryMove, act: waitOrStairs, useItem: useItem, get rooms() { return rooms; }, genFloor: genFloor, genShop: genShop, openShop: openShop, useSpecial: useSpecial, menuPress: menuPress, openInv: openInv, kbScope: kbScope, cutStep: cutStep, music: music, sfxAudio: function () { return sfx.audio(); },  updateVis: updateVis, camSnap: camSnap, hurtMon: hurtMon, META: META, CHARS: CHARS, PETS: PETS, genHub: genHub, enterDungeon: enterDungeon, openSanct: openSanct, openClub: openClub, openArcade: openArcade, closeArcade: closeArcade, initPet: initPet, petGain: petGain, petAct: petAct, applyChar: applyChar, addRep: addRep, addTokens: addTokens, slimeSplit: slimeSplit, spawnMon: spawnMon, useNew: useNew, isUnlocked: isUnlocked, lockedIds: lockedIds, unlockCost: unlockCost, get gitems() { return gitems; }, MW: MW, MH: MH, bfs: bfs, get dmap() { return dmap; } };
+window.__cq = { get traps() { return traps; }, X: { trapKind: trapKind, extTrap: extTrap, fireRanged: fireRanged, blumDefeated: blumDefeated, genBonusNatty: genBonusNatty, applyFlier: applyFlier, startAim: startAim, throwItem: throwItem, spawnMon: spawnMon, spawnBoss: spawnBoss, capOf: capOf, healP: healP, hurtPlayer: hurtPlayer, endTurn: endTurn, frogTouch: frogTouch, FLIERS: FLIERS, SHOPS: SHOPS, MONS: MONS, restStop: restStop }, charSprite: charSprite, getNpcSpr: getNpcSpr, ATLAS: ATLAS, imgs: imgs, SP: SP, IC: IC, ITEMS: ITEMS, step: step, pAtk: pAtk, pDef: pDef, pBlock: pBlock, G: G, get P() { return P; }, get mons() { return mons; }, get map() { return map; }, get items() { return gitems; }, start: startGame, tryMove: tryMove, act: waitOrStairs, useItem: useItem, get rooms() { return rooms; }, genFloor: genFloor, genShop: genShop, openShop: openShop, useSpecial: useSpecial, menuPress: menuPress, openInv: openInv, kbScope: kbScope, cutStep: cutStep, music: music, sfxAudio: function () { return sfx.audio(); },  updateVis: updateVis, camSnap: camSnap, hurtMon: hurtMon, META: META, CHARS: CHARS, PETS: PETS, genHub: genHub, enterDungeon: enterDungeon, openSanct: openSanct, openClub: openClub, openArcade: openArcade, closeArcade: closeArcade, initPet: initPet, petGain: petGain, petAct: petAct, applyChar: applyChar, addRep: addRep, addTokens: addTokens, slimeSplit: slimeSplit, spawnMon: spawnMon, useNew: useNew, isUnlocked: isUnlocked, lockedIds: lockedIds, unlockCost: unlockCost, get gitems() { return gitems; }, MW: MW, MH: MH, bfs: bfs, get dmap() { return dmap; } };
 })();
 
 </script>
