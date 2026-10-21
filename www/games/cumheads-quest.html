@@ -1474,7 +1474,6 @@ function sanctTop(note) {
   row(list, 'GEAR UNLOCKS  ·  ' + got + '/' + lt.length, function () { sanctGear(null); }, 'New weapons, armour, scrolls and potions that then turn up in the dungeon');
   var owned = CHARORDER.filter(function (i) { return META.owned[i]; }).length;
   row(list, 'CHARACTERS  ·  ' + owned + '/' + CHARORDER.length, function () { sanctChars(); }, 'Earn 100% reputation on runs, then hire them here');
-  row(list, 'REPUTATION', function () { sanctRep(); }, 'How much each character trusts you. Reach 100% to hire them');
   row(list, 'PACK UPGRADES', function () { sanctPack(); }, 'Beat Blumhead for free slots, or buy more. Up to 10 per pack. ' + blumRank());
   var pn = Object.keys(META.pets).length;
   row(list, 'HATCHERY  ·  ' + pn + '/' + PETORDER.length, function () { sanctHatch(); }, 'Unlock and upgrade homunculi. Eggs hatch during a run');
@@ -1504,12 +1503,13 @@ function sanctChars(note) {
   var list = setShop('Characters', tokNote(note), function () { sanctTop(); });
   CHARORDER.filter(function (i) { return i !== 'cumhead'; }).sort(function (a, b) { return CHARS[a].cost - CHARS[b].cost; }).forEach(function (id) {
     var c = CHARS[id], rep = META.rep[id] || 0, own = !!META.owned[id];
-    row(list, c.name.toUpperCase() + '  ·  ' + (own ? 'HIRED' : c.cost + ' tokens') + '  ·  REP ' + rep + '%', function () {
+    var rb = row(list, c.name.toUpperCase() + '  ·  ' + (own ? 'HIRED' : c.cost + ' tokens') + '  ·  ' + (rep >= 100 ? 'TRUSTS YOU' : rep + '%'), function () {
       if (own) { sfx.click(); sanctChars('Already hired. Switch at the Clubhouse.'); return; }
       if (rep < 100) { sfx.click(); sanctChars(c.name + ' does not trust you yet (' + rep + '/100). Visit their shop.'); return; }
       if (META.tokens < c.cost) { sfx.click(); sanctChars('Not enough tokens.'); return; }
       META.tokens -= c.cost; META.owned[id] = 1; saveMeta(); sfx.oneup && sfx.oneup(); sanctChars(c.name + ' joins you! Pick them at the Clubhouse.');
     }, c.pas + ': ' + c.d + '  (HP ' + c.hp + ' · STR ' + c.str + ' · DEX ' + c.dex + ' · INT ' + c.int + ')', (own || rep < 100 || META.tokens < c.cost) ? 'cat empty' : 'cat');
+    var bar = document.createElement('div'); bar.className = 'repbar'; bar.style.margin = '5px 0 3px'; var bi = document.createElement('i'); bi.style.width = Math.min(100, rep) + '%'; if (rep >= 100) bi.className = 'full'; bar.appendChild(bi); rb.insertBefore(bar, rb.lastChild);
   });
 }
 function sanctHatch(note) {
