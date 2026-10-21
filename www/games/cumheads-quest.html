@@ -212,9 +212,61 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(30px,8vw,46px);lin
 .eqRow small{grid-column:1/3;color:var(--ash);font-size:6px}.eqRow img{width:16px;height:16px;image-rendering:pixelated;grid-row:2}.eqRow span{grid-column:2;grid-row:2;line-height:1.4}.eqRow b{grid-column:2;font-weight:400;color:#ffe36a;font-size:7px}.eqRow .dim{color:var(--ash)}
 .repbar{height:9px;background:#1a0a0c;box-shadow:inset 0 0 0 1px #4a1a1c}.repbar i{display:block;height:100%;background:linear-gradient(90deg,#8e0c14,#ff6a70)}.repbar i.full{background:linear-gradient(90deg,#c8a020,#ffe36a)}.repWrap{padding:2px 0 6px}
 .qtyRow{display:flex;gap:8px;align-items:center}.qtyRow .act{width:64px;text-align:center;padding-left:14px!important}.qtyRow #qtyN{flex:1;text-align:center}
-@media (max-aspect-ratio:1/1){#shopBody{flex-direction:column}#shopEq{width:auto;flex:0 0 auto;max-height:34%}}
-@media (max-height:520px){#shopEq{width:170px;flex-basis:170px;padding:6px}}
-@media (max-width:700px) and (min-aspect-ratio:1/1){#shopEq{display:none!important}}
+
+/* ================= UNIFIED MENUS (update 18): same panels, same info, every screen ================= */
+#shop,#lvl,#inv,#opts,#how{position:fixed;inset:0;z-index:20;background:#050203!important;align-items:stretch;justify-content:flex-start;padding:10px 14px;gap:6px;overflow:hidden}
+#app.menu #pad{z-index:30}
+#shop h2,#lvl h2{font-size:24px;flex:none;text-align:center;line-height:1.1}
+#lvl .px{flex:none;text-align:center;max-width:none}
+#shop,#lvl{max-width:none}
+#shopBody{width:min(820px,100%);margin:0 auto;flex:1 1 0;min-height:0;display:flex;flex-direction:row;gap:8px}
+#shopBody #shopList{flex:1 1 0;min-width:0;width:auto;min-height:0;overflow-y:auto}
+#shopEq{display:none;width:210px;flex:0 0 210px;overflow-y:auto;padding:8px 10px}
+#shop.eqon #shopEq{display:block}
+#shop.eqon #shopBody{width:min(820px,100%)}
+.eqRow{padding:3px 0}
+#shopClose,#shop .smallbtn{flex:none;align-self:center;margin:2px 0 0;min-height:36px}
+#lvlList{width:min(620px,100%);margin:0 auto;flex:1 1 0;min-height:0}
+#inv .ffwrap{height:100%;width:min(820px,100%);margin:0 auto;max-height:none}
+#opts .panel,#how .panel{width:min(620px,100%);margin:0 auto;flex:1 1 0}
+#opts .smallbtn,#how .smallbtn{flex:none;margin:0 auto}
+#opts h2,#how h2{font-size:24px;text-align:center;flex:none}
+@media (min-aspect-ratio:1/1){
+  #app:not(.notouch) #shop,#app:not(.notouch) #lvl,#app:not(.notouch) #inv,#app:not(.notouch) #opts,#app:not(.notouch) #how{padding-left:176px;padding-right:176px}
+  #app.menu #shop,#app.menu #lvl,#app.menu #inv{padding-top:8px;padding-bottom:8px}
+}
+@media (max-aspect-ratio:1/1){
+  #shop,#lvl,#inv,#opts,#how{padding:12px 10px calc(12px + env(safe-area-inset-bottom,0px))}
+  #shopBody{flex-direction:column}
+  #shopEq{width:auto;flex:0 0 auto;overflow:visible;display:none;grid-template-columns:1fr 1fr;gap:0 14px}
+  #shop.eqon #shopEq{display:grid}
+  #shop.eqon #shopEq{flex:0 0 auto;align-content:start;padding:12px 14px}
+  #shopBody #shopList{flex:1 1 0}
+  #shopEq .eqRow{padding:7px 0;font-size:10px}#shopEq .eqRow small{font-size:7px}#shopEq .eqRow b{font-size:8px}
+  #shopEq>p{grid-column:1/3}
+  #shopEq .eqRow{min-width:0}
+  #app.menu #pad{display:none}
+  #shop,#lvl,#inv,#opts,#how{zoom:1.2}
+}
+/* inventory: identical panels everywhere */
+@media (max-aspect-ratio:1/1),(max-width:640px){
+  #inv .ffwrap,#inv .ffwrap[data-m]{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto auto auto}
+  #inv #ffTabs,#inv #ffList,#inv .ffside,#inv #ffDesc,#inv #ffClose{grid-column:1!important}
+  #inv #ffList{grid-row:2!important}#inv .ffside{grid-row:3!important;display:flex!important;flex-direction:row;overflow:visible;max-height:none}
+  #inv .ffside>*{flex:1 1 0;min-width:0}
+  #inv #ffChar{display:flex!important}#inv #ffStat{display:grid!important;grid-template-columns:1fr}#inv #ffStat[hidden]{display:none!important}
+  #inv #ffDesc{grid-row:4!important;display:flex!important}#inv #ffDesc .ffd2{display:block!important}
+  #inv #ffClose{display:block!important;position:static!important;grid-row:5!important}
+  #inv .ffmini{display:none!important}
+  #inv .ffwrap[data-m=main] .ffbar:nth-child(4){display:flex}
+}
+@media (min-aspect-ratio:1/1) and (min-width:641px){#inv #ffClose{position:static!important;grid-column:1/3!important;grid-row:4!important;justify-self:center;min-height:34px}#inv #ffTabs{padding-right:8px!important}}
+@media (max-height:520px) and (min-aspect-ratio:1/1){
+  #shop h2,#lvl h2{font-size:18px}
+  #shopEq{width:196px;flex-basis:196px;padding:6px 8px}
+  .eqRow{padding:2px 0}.eqRow small{font-size:5px}
+  #inv .ffwrap{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
+}
 </style>
 
 <div id="app">
@@ -914,7 +966,7 @@ function renderSell(note) {
   if (!any) { var e = document.createElement('p'); e.className = 'px dim'; e.textContent = 'Nothing to sell. Equipped gear stays with you.'; list.appendChild(e); }
   showEq(true);
 }
-el('shopClose').addEventListener('click', function () { sfx.click(); if (G.sBack) G.sBack(); else closeShop(); });
+el('shopClose').addEventListener('click', function () { sfx.click(); if (G.sBack) G.sBack(); else { var mbl = G.mbLeave && G.shop === 'masterbates'; closeShop(); if (mbl) { G.mbLeave = false; descend(); } } });
 
 /* ----- drawing ----- */
 function drawShopDecor(camx, camy) {
@@ -2365,6 +2417,7 @@ function extUse(i) {
     else say('Crispy chicken nuggets. Tasty.', '#ffcf80');
     return done();
   }
+  if (id === 'scrollClarity') { sfx.scroll(); clarityReveal(); if (!traps.length && !G.secret) say('Clarity washes over you. This floor hides nothing.', '#ff9ac0'); updateVis(); return done(); }
   if (id === 'fleshlight') { P.fl = 10; say('You settle in. Ten turns of perfect, blissful stillness...', '#ff9ac0'); pop(P.x, P.y, 'AHHH', '#ff9ac0'); sfx.quaff(); return done(); }
   if (id === 'penjamin') { if (it.fl === G.floor) { say('The Penjamin needs a new floor to recharge.', '#ff9a40'); sfx.click(); return true; } if (P.stim > 0) { say('Combat Stims are already working. They do not stack.', '#ff9a40'); sfx.click(); return true; } it.fl = G.floor; keepInvOpen(); applyStim(); return true; }
   if (id === 'bloodpack') { var bh = isCh('nattyboro') ? 70 : 15, b0 = P.hp; P.hp = Math.min(P.mhp, P.hp + bh); pop(P.x, P.y, '+' + (P.hp - b0), '#ff5a7a'); say(isCh('nattyboro') ? 'Nattyboro drinks the blood pack. Delicious! +' + (P.hp - b0) + ' HP.' : 'You force down the blood pack. +' + (P.hp - b0) + ' HP.', '#ff7a8a'); sfx.quaff(); return done(); }
@@ -2651,8 +2704,9 @@ function genSecret(n) {
       map[idx(bx, by)] = 3; var rid = rooms.length; rooms.push(rect); carveRoom(rect, rid); G.secretRid = rid; G.secretOpen = false; G.secret = { bx: bx, by: by, hits: 0, room: rect, spur: [] }; for (var si = 1; si <= L; si++) G.secret.spur.push([c[0] + dx * si, c[1] + dy * si]);
       var shopRoom = Math.random() < 0.45;
       if (shopRoom) {
-        var ids = SHOPIDS.filter(function (q) { return q !== 'arcade' && q !== 'spermaid' && SHOPS[q] && !(q === 'nattyboro' && isCh('ali')); }), sid = pick(ids);
-        mons.push(npcEnt({ shop: sid, sprk: sid === 'cafe' ? 'kaya' : sid, who: shopOwners(sid)[0], name: SHOPS[sid].owner, x: rect.cx, y: rect.cy, floorShop: true, secretNpc: true }));
+        var ids = SHOPIDS.filter(function (q) { return q !== 'arcade' && q !== 'spermaid' && SHOPS[q] && !(q === 'nattyboro' && isCh('ali')); }), sid = pick(ids), mbd = G.floor < maxFloor() - 1 && Math.random() < 0.5;
+        if (mbd) sid = 'masterbates';
+        mons.push(npcEnt({ shop: sid, sprk: sid === 'cafe' ? 'kaya' : sid, who: shopOwners(sid)[0], name: SHOPS[sid].owner, x: rect.cx, y: rect.cy, floorShop: !mbd, mbDoor: mbd, secretNpc: true }));
         G.secret.kind = 'shop';
       } else {
         var nn = Math.min(n, 60) + 6, pl = [], id2; for (id2 in ITEMS) { var q = ITEMS[id2]; if (q.w > 0 && nn >= q.minF && isUnlocked(id2) && (GEAR.indexOf(q.k) >= 0 || q.k === 'potion' || q.k === 'scroll')) pl.push([id2, q.w + (GEAR.indexOf(q.k) >= 0 ? 2 : 0)]); }
@@ -2739,6 +2793,7 @@ function drawBoardNpc(m, camx, camy) {
   else { text('BEST', cx, by - 25, 'center', '#ffe36a', 6); var b1 = META.lb[0]; text(b1 ? 'B' + b1.floor + 'F' : '---', cx, by - 15, 'center', '#f1e7d0', 8); }
 }
 function openShopExt(m) {
+  if (m.mbDoor) { G.floor++; if (G.floor > best.floor) best.floor = G.floor; saveBest(); genShop(G.floor, 'masterbates'); G.mbLeave = true; G.lock = 0.3; G.fade = 0.5; say('Master Bates welcomes you into his Emporium. Leaving takes you down.', '#ffe36a'); saveRun(); return true; }
   if (m.door === 'endless') { openEndless(); return true; }
   if (m.lb) { openLeaderboard(); return true; }
   if (m.board) { openBoard(); return true; }
@@ -2797,7 +2852,7 @@ function drawShopDecor(camx, camy) {
   if (th.rug === 'round') { ctx.fillStyle = '#12040a'; ctx.beginPath(); ctx.ellipse(x0 + W / 2, y0 + ry0 + rh / 2, rw / 2 + 2, rh / 2 + 2, 0, 0, 6.3); ctx.fill(); ctx.fillStyle = c1; ctx.beginPath(); ctx.ellipse(x0 + W / 2, y0 + ry0 + rh / 2, rw / 2, rh / 2, 0, 0, 6.3); ctx.fill(); ctx.fillStyle = '#12040a'; ctx.beginPath(); ctx.ellipse(x0 + W / 2, y0 + ry0 + rh / 2, rw / 2 - 8, rh / 2 - 7, 0, 0, 6.3); ctx.fill(); ctx.globalAlpha = 0.5; ctx.fillStyle = c2; ctx.beginPath(); ctx.ellipse(x0 + W / 2, y0 + ry0 + rh / 2, rw / 2 - 12, rh / 2 - 10, 0, 0, 6.3); ctx.fill(); ctx.globalAlpha = 1; }
   else if (th.rug === 'stripes') { rc('#12040a', rx0 - 2, ry0 - 2, rw + 4, rh + 4); for (i = 0; i < 9; i++) rc(i % 2 ? c2 : c1, rx0 + i * (rw / 9), ry0, Math.ceil(rw / 9), rh); rc('rgba(0,0,0,0.25)', rx0, ry0, rw, 2); rc('rgba(0,0,0,0.25)', rx0, ry0 + rh - 2, rw, 2); }
   else if (th.rug === 'diamond') { rc('#12040a', rx0 - 2, ry0 - 2, rw + 4, rh + 4); rc(c1, rx0, ry0, rw, rh); ctx.fillStyle = c2; ctx.beginPath(); ctx.moveTo(x0 + W / 2, y0 + ry0 + 4); ctx.lineTo(x0 + rx0 + rw - 6, y0 + ry0 + rh / 2); ctx.lineTo(x0 + W / 2, y0 + ry0 + rh - 4); ctx.lineTo(x0 + rx0 + 6, y0 + ry0 + rh / 2); ctx.fill(); ctx.fillStyle = '#12040a'; ctx.beginPath(); ctx.moveTo(x0 + W / 2, y0 + ry0 + 14); ctx.lineTo(x0 + W / 2 + 22, y0 + ry0 + rh / 2); ctx.lineTo(x0 + W / 2, y0 + ry0 + rh - 14); ctx.lineTo(x0 + W / 2 - 22, y0 + ry0 + rh / 2); ctx.fill(); }
-  else if (th.rug === 'fate') { ctx.fillStyle = '#12040a'; ctx.beginPath(); ctx.ellipse(x0 + W / 2, y0 + ry0 + rh / 2, rw / 2 + 2, rh / 2 + 2, 0, 0, 6.3); ctx.fill(); ctx.fillStyle = '#1a0a30'; ctx.beginPath(); ctx.ellipse(x0 + W / 2, y0 + ry0 + rh / 2, rw / 2, rh / 2, 0, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#7a2ad0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x0 + W / 2, y0 + ry0 + rh / 2, rw / 2 - 6, rh / 2 - 6, 0, 0, 6.3); ctx.stroke(); var sx0 = x0 + W / 2, sy0 = y0 + ry0 + rh / 2; ctx.fillStyle = '#9be62a'; ctx.beginPath(); ctx.moveTo(sx0, sy0 - 22); ctx.quadraticCurveTo(sx0 + 3, sy0 - 3, sx0 + 26, sy0); ctx.quadraticCurveTo(sx0 + 3, sy0 + 3, sx0, sy0 + 22); ctx.quadraticCurveTo(sx0 - 3, sy0 + 3, sx0 - 26, sy0); ctx.quadraticCurveTo(sx0 - 3, sy0 - 3, sx0, sy0 - 22); ctx.fill(); }
+  else if (th.rug === 'fate') { ctx.fillStyle = '#12040a'; ctx.beginPath(); ctx.ellipse(x0 + W / 2, y0 + ry0 + rh / 2, rw / 2 + 2, rh / 2 + 2, 0, 0, 6.3); ctx.fill(); ctx.fillStyle = '#1a0a30'; ctx.beginPath(); ctx.ellipse(x0 + W / 2, y0 + ry0 + rh / 2, rw / 2, rh / 2, 0, 0, 6.3); ctx.fill(); ctx.strokeStyle = '#7a2ad0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x0 + W / 2, y0 + ry0 + rh / 2, rw / 2 - 6, rh / 2 - 6, 0, 0, 6.3); ctx.stroke(); var sx0 = x0 + W / 2, sy0 = y0 + ry0 + rh / 2; ctx.fillStyle = '#9be62a'; ctx.beginPath(); ctx.moveTo(sx0, sy0 - 22); ctx.quadraticCurveTo(sx0 + 3, sy0 - 3, sx0 + 26, sy0); ctx.quadraticCurveTo(sx0 + 3, sy0 + 3, sx0, sy0 + 22); ctx.quadraticCurveTo(sx0 - 3, sy0 + 3, sx0 - 26, sy0); ctx.quadraticCurveTo(sx0 - 3, sy0 - 3, sx0, sy0 - 22); ctx.fill(); ctx.fillStyle = '#1a0a30'; ctx.beginPath(); ctx.moveTo(sx0, sy0 - 12); ctx.quadraticCurveTo(sx0 + 2, sy0 - 2, sx0 + 14, sy0); ctx.quadraticCurveTo(sx0 + 2, sy0 + 2, sx0, sy0 + 12); ctx.quadraticCurveTo(sx0 - 2, sy0 + 2, sx0 - 14, sy0); ctx.quadraticCurveTo(sx0 - 2, sy0 - 2, sx0, sy0 - 12); ctx.fill(); ctx.fillStyle = '#9be62a'; ctx.beginPath(); ctx.arc(sx0, sy0, 3, 0, 6.3); ctx.fill(); ctx.fillStyle = '#12040a'; ctx.beginPath(); ctx.arc(sx0, sy0, 1.2, 0, 6.3); ctx.fill(); }
   else if (th.rug === 'long') { rc('#12040a', W / 2 - T - 2, 2 * T, 2 * T + 4, H - 2 * T); rc('#a8141e', W / 2 - T, 2 * T, 2 * T, H - 2 * T); rc('#ffe36a', W / 2 - T, 2 * T, 2, H - 2 * T); rc('#ffe36a', W / 2 + T - 2, 2 * T, 2, H - 2 * T); }
   /* back wall */
   rc(th.w[0], 0, 0, W, 2 * T);
@@ -2832,7 +2887,7 @@ function drawShopDecor(camx, camy) {
     else if (hg === 'ladles' && i % 2 === 0) { rc('#12040a', lx, 8, 1, 4); rc('#9a9aa6', lx - 1, 12, 2, 8); disc('#9a9aa6', lx, 22, 3); }
     else if (hg === 'pans' && i % 2 === 0) { rc('#12040a', lx, 8, 1, 4); rc('#3a3a44', lx - 1, 12, 2, 6); disc('#2a2a32', lx, 21, 5); disc('#4a4a54', lx, 21, 3); }
     else if (hg === 'teacups' && i % 2 === 1) { rc('#12040a', lx, 8, 1, 6); rc('#f4f0e0', lx - 3, 14, 7, 5); rc('#c8f0a0', lx - 3, 14, 7, 1); rc('#f4f0e0', lx + 4, 15, 2, 3); disc('#f4f0e0', lx, 20, 4); }
-    else if (hg === 'fatecards' && i % 2 === 0) { rc('#12040a', lx, 8, 1, 4 + (i % 4)); var cy2 = 12 + (i % 4) + sw; ctx.globalAlpha = 0.35; disc('#9be62a', lx + 4, cy2 + 6, 9); ctx.globalAlpha = 1; rc('#f6f0e0', lx, cy2, 9, 12); rc('#1a0a40', lx + 1, cy2 + 1, 7, 10); rc('#7a2ad0', lx + 1, cy2 + 2, 7, 1); rc('#9be62a', lx + 3, cy2 + 4, 3, 3); rc('#9be62a', lx + 4, cy2 + 3, 1, 5); }
+    else if (hg === 'fatecards' && i % 2 === 0) { rc('#12040a', lx, 8, 1, 4 + (i % 4)); var cy2 = 12 + (i % 4) + sw; ctx.globalAlpha = 0.35; disc('#9be62a', lx + 4, cy2 + 6, 9); ctx.globalAlpha = 1; rc('#f6f0e0', lx, cy2, 9, 12); rc('#1a0a40', lx + 1, cy2 + 1, 7, 10); rc('#7a2ad0', lx + 1, cy2 + 2, 7, 1); rc('#9be62a', lx + 4, cy2 + 3, 1, 1); rc('#9be62a', lx + 3, cy2 + 4, 3, 1); rc('#9be62a', lx + 2, cy2 + 5, 5, 1); rc('#9be62a', lx + 3, cy2 + 6, 3, 1); rc('#9be62a', lx + 4, cy2 + 7, 1, 1); rc('#1a0a40', lx + 4, cy2 + 5, 1, 1); }
     else if (hg === 'cards' && i % 2 === 0) { rc('#12040a', lx, 8, 1, 5); rc('#f6f0e0', lx - 4 + sw, 13, 8, 11); rc('#7a2ad0', lx - 3 + sw, 14, 6, 9); rc('#ffe36a', lx - 1 + sw, 17, 2, 3); }
   }
   if (th.fl === 'fate') { ctx.lineWidth = 1.5; for (var lg = 0; lg < 3; lg++) { var ph = Math.floor(G.t * 6 + lg * 7); if ((ph + lg) % 4) continue; var lxx = ((ph * 53 + lg * 97) % (W - 40)) + 20; ctx.strokeStyle = lg % 2 ? '#9be62a' : '#b070ff'; ctx.beginPath(); ctx.moveTo(x0 + lxx, y0 + 6); ctx.lineTo(x0 + lxx + 6, y0 + 20); ctx.lineTo(x0 + lxx - 3, y0 + 30); ctx.lineTo(x0 + lxx + 5, y0 + 48); ctx.stroke(); } for (i = 0; i < 5; i++) { ctx.globalAlpha = 0.12; disc('#9be62a', (G.t * 12 + i * 70) % W, 2 * T + 6 + Math.sin(G.t + i) * 6, 14); ctx.globalAlpha = 1; } }
@@ -2904,12 +2959,12 @@ HSPEC.stackedfate = { skin: '#b79a86', top: '#120e18', btm: '#0e0a12', shoe: '#0
   },
   px: function (g, v) {
     var K = '#0a060e', Gr = '#b6ff3a', Gd = '#6ac81e';
-    if (v === 'd') { g.fillStyle = K; g.fillRect(9, 12, 10, 4); g.fillRect(10, 16, 8, 1); px1(g, K, 9, 11, 1, 1); px1(g, K, 18, 11, 1, 1);
+    if (v === 'd') { g.fillStyle = K; g.fillRect(8, 12, 12, 4); g.fillRect(9, 16, 10, 1); g.fillRect(10, 17, 8, 1); px1(g, K, 8, 11, 1, 1); px1(g, K, 19, 11, 1, 1); px1(g, K, 10, 11, 2, 1); px1(g, K, 13, 11, 2, 1); px1(g, K, 16, 11, 2, 1);
       var z = [[10, 13], [11, 14], [12, 13], [13, 14], [14, 13], [15, 14], [16, 13], [17, 14]]; z.forEach(function (p) { px1(g, Gr, p[0], p[1], 1, 1); }); px1(g, Gd, 10, 14, 1, 1); px1(g, Gd, 17, 13, 1, 1);
       px1(g, '#0a1604', 10, 9, 3, 2); px1(g, '#0a1604', 15, 9, 3, 2); px1(g, Gr, 11, 10, 2, 1); px1(g, Gr, 16, 10, 2, 1); px1(g, '#ecffb0', 12, 10, 1, 1); px1(g, '#ecffb0', 17, 10, 1, 1); px1(g, '#5a8a1a', 10, 9, 3, 1); px1(g, '#5a8a1a', 15, 9, 3, 1); }
     else if (v === 's') { g.fillStyle = K; g.fillRect(15, 12, 5, 4); px1(g, Gr, 16, 13, 1, 1); px1(g, Gr, 18, 14, 1, 1); px1(g, Gr, 17, 10, 2, 1); px1(g, '#ecffb0', 18, 10, 1, 1); }
   },
-  prop: function (g, v) { var x = v === 's' ? 17.6 : 22.2, y = 19.6; vPoly(g, [[x - 2.6, y], [x + 2.4, y - 0.4], [x + 2.8, y + 6.2], [x - 2.2, y + 6.6]], '#f6f0e0'); vPoly(g, [[x - 1.8, y + 0.8], [x + 1.8, y + 0.5], [x + 2.1, y + 5.6], [x - 1.5, y + 5.9]], '#2a1058'); vPoly(g, [[x, y + 1.8], [x + 1.2, y + 3.2], [x, y + 4.8], [x - 1.2, y + 3.2]], '#b6ff3a'); vEll(g, x - 0.4, y + 6.4, 1.4, 1.1, '#0e0a12'); }
+  prop: function (g, v) { var x = v === 's' ? 17.6 : 22.2, y = 19.6; vPoly(g, [[x - 2.6, y], [x + 2.4, y - 0.4], [x + 2.8, y + 6.2], [x - 2.2, y + 6.6]], '#f6f0e0'); vPoly(g, [[x - 1.8, y + 0.8], [x + 1.8, y + 0.5], [x + 2.1, y + 5.6], [x - 1.5, y + 5.9]], '#2a1058'); vPoly(g, [[x, y + 1.4], [x + 1.5, y + 3.2], [x, y + 5], [x - 1.5, y + 3.2]], '#b6ff3a'); vPoly(g, [[x, y + 2.4], [x + 0.7, y + 3.2], [x, y + 4], [x - 0.7, y + 3.2]], '#2a1058'); vEll(g, x, y + 3.2, 0.3, 0.3, '#b6ff3a'); vEll(g, x - 0.4, y + 6.4, 1.4, 1.1, '#0e0a12'); }
 };
 /* a Stacked Fate shop that matches him: purple lightning and green smoke */
 SHOPS.stackedfate.col = '#7a2ad0'; SHOPS.stackedfate.col2 = '#9be62a';
@@ -2959,9 +3014,8 @@ function showEq(on) {
   var s = el('shop'); s.classList.toggle('eqon', !!on); if (!on) return;
   var box = el('shopEq'); box.innerHTML = '';
   var h = document.createElement('p'); h.className = 'px'; h.textContent = 'EQUIPPED'; h.style.margin = '0 0 4px'; box.appendChild(h);
-  [['weapon', 'WEAPON'], ['offr', 'OFFHAND'], ['shield', 'SHIELD'], ['head', 'HEAD'], ['armor', 'BODY'], ['arms', 'ARMS'], ['legs', 'LEGS']].forEach(function (sl) {
-    var o = null; for (var i = 0; i < P.inv.length; i++) { var q = P.inv[i]; if (!q.eq) continue; var dd = ITEMS[q.id]; if (sl[0] === 'offr' ? q.off : (dd.k === sl[0] && !q.off)) { o = q; break; } }
-    if (sl[0] === 'offr' && !o) return;
+  [['weapon', 'MAIN HAND'], ['offhand', 'OFF HAND'], ['head', 'HEAD'], ['armor', 'BODY'], ['arms', 'ARMS'], ['legs', 'LEGS']].forEach(function (sl) {
+    var o = null; for (var i = 0; i < P.inv.length; i++) { var q = P.inv[i]; if (!q.eq) continue; var dd = ITEMS[q.id]; if (sl[0] === 'offhand' ? (q.off || dd.k === 'shield') : (dd.k === sl[0] && !q.off)) { o = q; break; } }
     var r = document.createElement('div'); r.className = 'eqRow'; var lb = document.createElement('small'); lb.textContent = sl[1]; r.appendChild(lb);
     if (o) { var im = document.createElement('img'); im.src = iconURL(o.id); im.alt = ''; r.appendChild(im); var nm = document.createElement('span'); nm.textContent = invName(o); r.appendChild(nm); var st = document.createElement('b'); st.textContent = (ITEMS[o.id].k === 'weapon' ? 'ATK ' : 'DEF ') + ITEMS[o.id].val; r.appendChild(st); }
     else { var no = document.createElement('span'); no.className = 'dim'; no.textContent = '-'; r.appendChild(no); }
@@ -2977,7 +3031,7 @@ function repBar(list, name, rp) {
 /* ----- off-hand ranged weapons ----- */
 function equipOff(it, d) {
   if (!(d.k === 'weapon' && d.ranged && d.hand === 'light')) return false;
-  var main = eqEntry('weapon'), md = main && ITEMS[main.id], force = invMode === 'eqpick' && EQSLOTS[eqSlot][0] === 'offr';
+  var main = eqEntry('weapon'), md = main && ITEMS[main.id], force = invMode === 'eqpick' && EQSLOTS[eqSlot][0] === 'offhand';
   if (!force && !(md && md.hand === 'light' && !md.ranged)) return false;
   if (force && !(md && md.hand === 'light')) { say('You need a one-handed weapon in your main hand to carry a second gun.', '#ff9a40'); sfx.click(); return 'refuse'; }
   P.inv.forEach(function (o) { if (o.off) { o.eq = false; o.off = false; } if (ITEMS[o.id].k === 'shield') o.eq = false; });
@@ -3041,16 +3095,16 @@ addDef('fleshlight', { name: 'Fleshlight', k: 'potion', val: 0, minF: 99, w: 0, 
 IC.penjamin = oi(function (g) { R(g, '#12040a', 3, 2, 10, 12); R(g, '#7a2ad0', 4, 3, 8, 10); R(g, '#9be62a', 6, 4, 4, 8); R(g, '#12040a', 7, 6, 2, 4); R(g, '#e0b020', 5, 2, 6, 1); });
 addDef('penjamin', { name: 'The Penjamin', k: 'potion', val: 0, minF: 99, w: 0, info: 'Gives the Combat Stim effect. Recharges once per floor. Master Bates\'s prize' }, IC.penjamin);
 SHOPS.masterbates = { name: 'Master Bates Emporium', owner: 'Master Bates', col: '#d06a8a', col2: '#ffe0c0', quote: '"One must clear one\'s head before one proceeds."', stock: [['tonic', 3], ['gtonic', 9], ['fleshlight', 25], ['stim', 12]], svc: [{ k: 'bite', label: 'BROWSE THE BACK ROOM', sub: 'Fills your belly and HP', f: 10, belly: 1, hp: 1, prize: [['penjamin', 0.05]], flier: null }] };
-SHOPIDS.push('masterbates'); HUBPOOL.push('masterbates'); FACLAB.masterbates = ['MASTER BATES', 'EMPORIUM']; HUBGOODS.masterbates = [['tonic', 3], ['fleshlight', 14]];
+ FACLAB.masterbates = ['MASTER BATES', 'EMPORIUM']; HUBGOODS.masterbates = [['tonic', 3], ['fleshlight', 14]];
 THEME.masterbates = { w: ['#3a1424', '#4a1c30'], fl: 'carpet', fc: ['#5a2438', '#6a2c42'], rug: 'diamond', awn: 'scallop', hang: 'drapes', props: ['cabinet', 'mirror', 'rack', 'candle'] };
 HSPEC.masterbates = { skin: '#f0cfae', top: '#7a2a4a', btm: '#3a2a3a', shoe: '#e0c0a0', mouth: '#8a3a2a', eye: '#1a1a2a', brow: '#3a2a1a', sleeve: '#7a2a4a',
   over: function (g, v) { if (v === 'd') { vPoly(g, [[8.6, 17.4], [12.6, 17.4], [12, 27.4], [8.4, 27.4]], '#7a2a4a'); vPoly(g, [[15.4, 17.4], [19.4, 17.4], [19.6, 27.4], [16, 27.4]], '#7a2a4a'); vPoly(g, [[12.6, 17.4], [15.4, 17.4], [14, 21]], '#f0cfae'); g.fillStyle = '#e0b020'; g.fillRect(9, 23.6, 10, 1.2); } vEll(g, 6.2, 26, 1.9, 1.9, '#f0cfae'); },
   hair: function (g, v) { var H = '#3a2a1a'; if (v === 'u') vEll(g, 14, 9.4, 6, 6.4, H); else hairCap(g, H, v); vPoly(g, [[9, 5], [11, 3], [14, 4.4], [17, 3], [19, 5.4]], H); },
   px: function (g, v) { if (v === 'd') { g.strokeStyle = '#2a2a3a'; g.lineWidth = 0.6; g.strokeRect(10.4, 10, 3.2, 2.6); g.strokeRect(14.4, 10, 3.2, 2.6); px1(g, '#2a2a3a', 13, 11, 2, 1); } else if (v === 's') { g.strokeStyle = '#2a2a3a'; g.lineWidth = 0.6; g.strokeRect(16, 10, 3, 2.6); } } };
-function mbReveal() {
-  if (!isCh('masterbates')) return;
+function mbReveal() { if (isCh('masterbates')) clarityReveal(); }
+function clarityReveal() {
   traps.forEach(function (t) { t.shown = true; });
-  if (G.secret) { G.secretOpen = true; var s = G.secret, r = s.room, x, y; for (y = r.y - 1; y <= r.y + r.h; y++) for (x = r.x - 1; x <= r.x + r.w; x++) if (inb(x, y)) seen[idx(x, y)] = 1; (s.spur || []).forEach(function (c) { seen[idx(c[0], c[1])] = 1; }); seen[idx(s.bx, s.by)] = 1; say('Clarity! You sense a hidden room and every trap on this floor.', '#ff9ac0'); }
+  if (G.secret) { G.secretOpen = true; var s = G.secret, r = s.room, x, y; for (y = r.y - 1; y <= r.y + r.h; y++) for (x = r.x - 1; x <= r.x + r.w; x++) if (inb(x, y)) seen[idx(x, y)] = 1; (s.spur || []).forEach(function (c) { seen[idx(c[0], c[1])] = 1; }); seen[idx(s.bx, s.by)] = 1; say('Clarity! A hidden room and every trap on this floor are revealed.', '#ff9ac0'); }
   else if (traps.length) say('Clarity! Every trap on this floor is revealed.', '#ff9ac0');
 }
 
@@ -3074,6 +3128,11 @@ function fleshTick() {
   if (i >= 10) { sfx.oneup && sfx.oneup(); G.shake = Math.max(G.shake, 4); }
   endTurn(0.2);
 }
+
+/* ----- Scroll of Clarity ----- */
+IC.scrollClarity = IC.scroll('#ff9ac0');
+addDef('scrollClarity', { name: 'Scroll of Clarity', k: 'scroll', minF: 4, w: 3, info: 'Reveals every trap and secret room on the floor' }, IC.scrollClarity);
+if (SHOPS.masterbates) SHOPS.masterbates.stock.push(['scrollClarity', 12]);
 
 buildMk();
 
@@ -3345,7 +3404,7 @@ function floorCell(room, avoid) {
 }
 function weighted(list) { var tot = 0, i; for (i = 0; i < list.length; i++) tot += list[i][1]; var r = Math.random() * tot; for (i = 0; i < list.length; i++) { r -= list[i][1]; if (r <= 0) return list[i][0]; } return list[0][0]; }
 function genFloor(n) {
-  var tries = 0; G.shop = null; G.shopRoom = false; G.wallY = -1; G.secret = null; G.secretRid = -1; G.hub = false; G.posters = []; G.bubble = null; if (G.pulsarUntil && n > G.pulsarUntil) G.pulsarUntil = 0;
+  var tries = 0; G.shop = null; G.mbLeave = false; G.shopRoom = false; G.wallY = -1; G.secret = null; G.secretRid = -1; G.hub = false; G.posters = []; G.bubble = null; if (G.pulsarUntil && n > G.pulsarUntil) G.pulsarUntil = 0;
   do {
     map.fill(0); seen.fill(0); roomId.fill(-1); rooms = []; mons = []; gitems = []; traps = []; popups = []; fx = [];
     for (var a = 0; a < 120 && rooms.length < 9; a++) {
@@ -3438,7 +3497,7 @@ function bfs() {
 }
 
 /* ---------- player ---------- */
-function eqDef(k) { for (var i = 0; i < P.inv.length; i++) { var o = P.inv[i]; if (!o.eq) continue; var dd = ITEMS[o.id]; if (k === 'offr') { if (o.off) return dd; continue; } if (dd.k === k && !o.off) return dd; } return null; }
+function eqDef(k) { for (var i = 0; i < P.inv.length; i++) { var o = P.inv[i]; if (!o.eq) continue; var dd = ITEMS[o.id]; if (k === 'offhand') { if (o.off || dd.k === 'shield') return dd; continue; } if (k === 'offr') { if (o.off) return dd; continue; } if (dd.k === k && !o.off) return dd; } return null; }
 function pAtk0() {
   var w = eqDef('weapon'); if (!w) return 1 + Math.floor(ST() * 0.5);
   if (w.deck) return w.val + Math.floor(IN() * 1.1 + DX() * 0.2);
@@ -3677,10 +3736,10 @@ function monAct(m) {
 }
 
 /* ---------- inventory ---------- */
-var CATS = [['food', 'Food'], ['potion', 'Potions'], ['scroll', 'Scrolls'], ['weapon', 'Weapons'], ['head', 'Head'], ['armor', 'Body'], ['arms', 'Arms'], ['legs', 'Legs'], ['shield', 'Shields']];
+var CATS = [['food', 'Food'], ['potion', 'Potions'], ['scroll', 'Scrolls'], ['weapon', 'Main hand'], ['offhand', 'Off hand'], ['head', 'Head'], ['armor', 'Body'], ['arms', 'Arms'], ['legs', 'Legs']];
 var invCat = 0, invCur = 0, invSel = null, invMode = 'main', cmdIdx = 0, cmdList = [], mainCur = 0, eqSlot = 0, eqCur = 0;
 var MAINCMDS = [['ITEMS', 'Food, potions, scrolls and gear. Eat, drink, read, throw or drop.'], ['EQUIP', 'Change your weapon, armour and shield.'], ['STATUS', 'Stats, passive ability and this run so far.'], ['OPTIONS', 'Sound, music volume, screen shake and on-screen controls.'], ['CLOSE', 'Back to the game.']];
-var EQSLOTS = [['weapon', 'WEAPON'], ['head', 'HEAD'], ['armor', 'BODY'], ['arms', 'ARMS'], ['legs', 'LEGS'], ['shield', 'SHIELD'], ['offr', 'OFFHAND GUN']];
+var EQSLOTS = [['weapon', 'MAIN HAND'], ['offhand', 'OFF HAND'], ['head', 'HEAD'], ['armor', 'BODY'], ['arms', 'ARMS'], ['legs', 'LEGS']];
 /* pixel hand cursor shared by every menu */
 (function () {
   var map = ['.OOOOO........', 'OWWWWWOOOOOO..', 'OWWWWWWWWWWWO.', 'OWWWWWWWWWWWWO', 'OWWWWWWWWWWWO.', 'OWWWWWOOOOOO..', '.OOOOO........'], r = '';
@@ -3697,7 +3756,7 @@ function mkBtn(cls, txt, fn, sub) {
   if (sub) { b.innerHTML = '<span></span><small></small>'; b.firstChild.textContent = txt; b.lastChild.textContent = sub; } else b.textContent = txt;
   b.addEventListener('click', fn); return b;
 }
-function invOfKind(k) { var out = []; if (k === 'offr') { P.inv.forEach(function (it, i) { var q = ITEMS[it.id]; if (q.k === 'weapon' && q.ranged && q.hand === 'light') out.push(i); }); return out; } P.inv.forEach(function (it, i) { if (ITEMS[it.id].k === k) out.push(i); }); return out; }
+function invOfKind(k) { var out = []; if (k === 'offhand') { P.inv.forEach(function (it, i) { var q = ITEMS[it.id]; if (q.k === 'shield' || (q.k === 'weapon' && q.ranged && q.hand === 'light')) out.push(i); }); return out; } P.inv.forEach(function (it, i) { if (ITEMS[it.id].k === k) out.push(i); }); return out; }
 function curIds() { return invOfKind(CATS[invCat][0]); }
 function itemStat(id, d, eq) {
   var t = '', cmp = '';
