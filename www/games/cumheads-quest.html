@@ -2755,7 +2755,7 @@ function fmtTime(ms) { var s = Math.floor(ms / 1000), m = Math.floor(s / 60), h 
 function recordEndless() {
   var gear = []; P.inv.forEach(function (o) { if (o.eq) gear.push(invName(o)); });
   var rec = { name: META.name || 'HUNTER', ch: P.ch, chName: CHARS[P.ch].name, floor: G.floor, lvl: P.lvl, pet: P.pet ? PETS[P.pet.id].name : '-', petLvl: P.pet ? P.pet.lvl : 0, gear: gear, ms: Math.round(G.runMs || 0), kills: G.kills, pots: G.potUsed || 0, date: Date.now() };
-  META.lb.push(rec); META.lb.sort(function (a, b) { return b.floor - a.floor || a.ms - b.ms; }); META.lb = META.lb.slice(0, 20); META.last = rec;
+  rec.sig = recSig(rec); META.lb.push(rec); META.lb.sort(function (a, b) { return b.floor - a.floor || a.ms - b.ms; }); META.lb = META.lb.slice(0, 20); META.last = rec;
   var tk = Math.floor(G.floor * 1.5); addTokens(tk); saveMeta(); return tk;
 }
 function openMenuScreen() { G.state = 'shop'; el('shop').hidden = false; sfx.click(); }
@@ -2764,7 +2764,7 @@ function runDetails(rec, back) {
   var list = setShop('Run Details', rec ? rec.name + '  ·  B' + rec.floor + 'F' : 'No runs yet', back);
   if (!rec) { infoP(list, 'Nobody has dived into the Endless Depths yet.', true); return; }
   infoP(list, 'FLOOR REACHED: B' + rec.floor + 'F'); infoP(list, 'CHARACTER: ' + rec.chName.toUpperCase() + '   LEVEL ' + rec.lvl); infoP(list, 'HOMUNCULUS: ' + rec.pet + (rec.petLvl ? ' LV ' + rec.petLvl : ''));
-  infoP(list, 'TIME: ' + fmtTime(rec.ms)); infoP(list, 'ENEMIES KILLED: ' + rec.kills); infoP(list, 'POTIONS USED: ' + rec.pots);
+  infoP(list, 'TIME: ' + fmtTime(rec.ms)); infoP(list, recOk(rec) ? 'PROOF: ' + rec.sig : 'PROOF: NONE (UNSIGNED RUN)', !recOk(rec)); infoP(list, 'ENEMIES KILLED: ' + rec.kills); infoP(list, 'POTIONS USED: ' + rec.pots);
   infoP(list, 'GEAR WORN:', true); (rec.gear.length ? rec.gear : ['Nothing']).forEach(function (g) { infoP(list, '  ' + g); });
 }
 function openBoard() { openMenuScreen(); boardMenu(); }
@@ -2773,7 +2773,38 @@ function boardMenu(note) {
   row(list, 'BEST RUN', function () { runDetails(META.lb[0] || null, function () { boardMenu(); }); }, META.lb[0] ? 'B' + META.lb[0].floor + 'F as ' + META.lb[0].chName : 'No runs yet', 'cat');
   row(list, 'LAST RUN', function () { runDetails(META.last || null, function () { boardMenu(); }); }, META.last ? 'B' + META.last.floor + 'F as ' + META.last.chName : 'No runs yet', 'cat');
 }
-function openLeaderboard() { openMenuScreen(); var list = setShop('Endless Leaderboard', 'The deepest dives on this device'); infoP(list, 'PLAYER  ·  CHARACTER  ·  FLOOR', true); if (!META.lb.length) infoP(list, 'No runs yet. Unlock Endless Mode by beating the Knights of Cum-a-lot.', true); META.lb.slice(0, 10).forEach(function (r, i) { infoP(list, (i + 1) + '. ' + r.name + '  ·  ' + r.chName + '  ·  B' + r.floor + 'F'); }); }
+/* ----- signed runs: every record carries a proof code that cannot be typed in by hand ----- */
+function cyrb(str, seed) { var h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed; for (var i = 0; i < str.length; i++) { var ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); } h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909); h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909); return [h1 >>> 0, h2 >>> 0]; }
+function macOf(str) {
+  var salt = ['cq', 'Hs', '7f', 'K9', 'xv', '26'].join('~'), a = cyrb(salt + '|' + str + '|' + salt.split('').reverse().join(''), 17), b = cyrb(a[0] + ':' + str + ':' + salt, a[1] & 0xffff), A = '0123456789ABCDEFGHJKMNPQRSTVWXYZ', out = '', n = [a[0], a[1], b[0], b[1]];
+  for (var k = 0; k < 10; k++) { out += A.charAt(((n[k % 4] >>> ((k * 5) % 27)) ^ (n[(k + 1) % 4] >>> 3)) & 31); }
+  return out.slice(0, 5) + '-' + out.slice(5);
+}
+function sigText(name, chName, floor, ms) { return [String(name).trim().toUpperCase(), String(chName).trim().toUpperCase(), floor, Math.floor(ms / 1000)].join('|'); }
+function recSig(r) { return macOf(sigText(r.name, r.chName, r.floor, r.ms)); }
+function recOk(r) { return !!r.sig && r.sig === recSig(r); }
+function fmtClock(ms) { var s = Math.floor(ms / 1000), m = Math.floor(s / 60); return m + ':' + (s % 60 < 10 ? '0' : '') + (s % 60); }
+function openLeaderboard() {
+  openMenuScreen(); var list = setShop('Endless Leaderboard', 'Every run carries a proof code'); infoP(list, 'PLAYER  ·  CHARACTER  ·  FLOOR  ·  TIME', true);
+  if (!META.lb.length) infoP(list, 'No runs yet. Unlock Endless Mode by beating the Knights of Cum-a-lot.', true);
+  META.lb.slice(0, 10).forEach(function (r, i) {
+    var ok = recOk(r); infoP(list, (i + 1) + '. ' + r.name + '  ·  ' + r.chName + '  ·  B' + r.floor + 'F  ·  ' + fmtClock(r.ms));
+    var p = document.createElement('p'); p.className = 'px'; p.style.cssText = 'margin:0 0 6px;font-size:7px;color:' + (ok ? '#7dff9a' : '#ff6a70'); p.textContent = ok ? 'PROOF ' + r.sig + '  ·  ' + new Date(r.date).toLocaleDateString() : 'UNSIGNED OR EDITED - NOT VALID'; list.appendChild(p);
+  });
+  var st = document.createElement('p'); st.className = 'px dim'; st.style.cssText = 'margin:8px 0 0;font-size:7px'; st.textContent = 'SCREEN TAKEN ' + new Date().toLocaleString(); list.appendChild(st);
+}
+function verifyMenu(note) {
+  var list = setShop('Verify a Run', note || 'Type what the screenshot shows. Fakes do not pass.', function () { endlessMenu(); });
+  var f = {}; function fld(lab, key, ph, type) { var w = document.createElement('div'); w.style.cssText = 'display:flex;gap:8px;align-items:center;margin:3px 0'; var l = document.createElement('span'); l.className = 'px dim'; l.style.cssText = 'width:84px;font-size:8px'; l.textContent = lab; var e = type === 'sel' ? document.createElement('select') : document.createElement('input'); if (type === 'sel') CHARORDER.forEach(function (id) { var o = document.createElement('option'); o.textContent = CHARS[id].name; e.appendChild(o); }); else { e.type = 'text'; e.placeholder = ph; e.maxLength = 14; } e.style.cssText = 'flex:1;min-width:0;background:#140809;color:#f1e7d0;border:0;box-shadow:inset 0 0 0 1px #4a1a1c;padding:8px;font:inherit;font-family:var(--pixel);font-size:9px'; w.appendChild(l); w.appendChild(e); list.appendChild(w); f[key] = e; }
+  fld('PLAYER', 'name', 'HUNTER'); fld('CHARACTER', 'ch', '', 'sel'); fld('FLOOR', 'floor', '34'); fld('TIME', 'time', '12:03'); fld('PROOF', 'code', 'XXXXX-XXXXX');
+  var res = document.createElement('p'); res.className = 'px'; res.style.margin = '8px 0';
+  var chk = row(list, 'CHECK', function () {
+    var tm = f.time.value.trim().split(':'), sec = tm.length === 2 ? (parseInt(tm[0], 10) * 60 + parseInt(tm[1], 10)) : NaN, fl = parseInt(f.floor.value, 10);
+    if (!(sec >= 0) || !(fl > 0) || !f.name.value.trim()) { res.style.color = '#ffcf80'; res.textContent = 'Fill in player, floor, time (m:ss) and the proof code.'; return; }
+    var code = f.code.value.trim().toUpperCase().replace(/\s/g, ''), good = macOf(sigText(f.name.value, f.ch.value, fl, sec * 1000)) === code;
+    res.style.color = good ? '#7dff9a' : '#ff6a70'; res.textContent = good ? 'VALID. This run is real.' : 'NOT VALID. The details do not match the proof code.'; sfx.click();
+  }, 'Checks the proof code against the details', 'act'); list.appendChild(res);
+}
 function openEndless() { openMenuScreen(); endlessMenu(); }
 function endlessMenu(note) {
   var list = setShop('Endless Depths', note || '"No floor limit. No mercy. Your gear scales as you fall."');
@@ -2782,6 +2813,7 @@ function endlessMenu(note) {
   inp.addEventListener('input', function () { META.name = inp.value.trim().toUpperCase() || 'HUNTER'; saveMeta(); }); nr.appendChild(lab); nr.appendChild(inp); list.appendChild(nr);
   row(list, 'START ENDLESS RUN', function () { closeShop(); G.wantEndless = true; enterDungeon(); }, 'Floors never stop. Mk.2 to Mk.6 gear and potions drop as you descend.', 'act');
   row(list, 'BOARD  ·  RUN DETAILS', function () { boardMenu(); G.sBack = function () { endlessMenu(); }; el('shopClose').textContent = 'BACK'; }, 'Inspect your best and last runs', 'cat');
+  row(list, 'VERIFY A SCREENSHOT', function () { verifyMenu(); }, 'Check a leaderboard screenshot is real', 'cat');
   row(list, 'LEADERBOARD', function () { openLeaderboard(); G.sBack = function () { endlessMenu(); }; el('shopClose').textContent = 'BACK'; }, 'Names, characters and floors', 'cat');
 }
 function addHubBoard() {
