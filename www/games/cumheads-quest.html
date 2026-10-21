@@ -1474,6 +1474,7 @@ function sanctTop(note) {
   row(list, 'GEAR UNLOCKS  ·  ' + got + '/' + lt.length, function () { sanctGear(null); }, 'New weapons, armour, scrolls and potions that then turn up in the dungeon');
   var owned = CHARORDER.filter(function (i) { return META.owned[i]; }).length;
   row(list, 'CHARACTERS  ·  ' + owned + '/' + CHARORDER.length, function () { sanctChars(); }, 'Earn 100% reputation on runs, then hire them here');
+  row(list, 'REPUTATION', function () { sanctRep(); }, 'How much each character trusts you. Reach 100% to hire them');
   row(list, 'PACK UPGRADES', function () { sanctPack(); }, 'Beat Blumhead for free slots, or buy more. Up to 10 per pack. ' + blumRank());
   var pn = Object.keys(META.pets).length;
   row(list, 'HATCHERY  ·  ' + pn + '/' + PETORDER.length, function () { sanctHatch(); }, 'Unlock and upgrade homunculi. Eggs hatch during a run');
@@ -1494,6 +1495,10 @@ function sanctGear(cat, note) {
     }, d.info + (d.minF < 99 ? '  ·  from B' + d.minF + 'F' : ''), META.tokens < cost ? 'cat empty' : 'cat');
   });
   ids.filter(function (i) { return META.unl[i]; }).forEach(function (id) { row(l2, 'OK  ' + ITEMS[id].name, function () { sfx.click(); }, ITEMS[id].info, 'cat empty'); });
+}
+function sanctRep(note) {
+  var list = setShop('Reputation', tokNote(note || 'Chat and stop for stims on a run to earn it'), function () { sanctTop(); });
+  CHARORDER.filter(function (i) { return i !== 'cumhead'; }).sort(function (a, b) { return (META.rep[b] || 0) - (META.rep[a] || 0); }).forEach(function (id) { repBar(list, CHARS[id].name, META.rep[id] || 0, META.owned[id]); });
 }
 function sanctChars(note) {
   var list = setShop('Characters', tokNote(note), function () { sanctTop(); });
@@ -1529,7 +1534,6 @@ function openHubShop(m) { G.state = 'shop'; sfx.click(); hubShop(m.shop, m.who);
 function hubShop(sid, who, note) {
   var sd = SHOPS[sid], nm = (who && CHARS[who]) ? CHARS[who].name : sd.owner, rp = META.rep[who || shopOwners(sid)[0]] || 0;
   var list = setShop(sd.name, tokNote(note || sd.quote));
-  repBar(list, nm, rp);
   (HUBGOODS[sid] || []).forEach(function (r) {
     var d = ITEMS[r[0]], cost = r[1];
     row(list, d.name + '  ·  ' + cost + ' tokens', function () {
@@ -3023,8 +3027,8 @@ function showEq(on) {
   });
   var t = document.createElement('p'); t.className = 'px dim'; t.style.margin = '6px 0 0'; t.textContent = 'ATK ' + pAtk() + '   DEF ' + pDef(); box.appendChild(t);
 }
-function repBar(list, name, rp) {
-  var wrap = document.createElement('div'); wrap.className = 'repWrap'; var l = document.createElement('p'); l.className = 'px dim'; l.style.margin = '0 0 3px'; l.textContent = name.toUpperCase() + '  ·  REPUTATION' + (rp >= 100 ? '  ·  TRUSTS YOU' : '') + '   (earn it on a run: chat and stop for stims)'; wrap.appendChild(l);
+function repBar(list, name, rp, hired) {
+  var wrap = document.createElement('div'); wrap.className = 'repWrap'; var l = document.createElement('p'); l.className = 'px dim'; l.style.margin = '0 0 3px'; l.textContent = name.toUpperCase() + '  ·  ' + (hired ? 'HIRED' : rp >= 100 ? 'TRUSTS YOU' : rp + '%'); wrap.appendChild(l);
   var b = document.createElement('div'); b.className = 'repbar'; var i = document.createElement('i'); i.style.width = Math.min(100, rp) + '%'; if (rp >= 100) i.className = 'full'; b.appendChild(i); wrap.appendChild(b); list.appendChild(wrap);
 }
 
