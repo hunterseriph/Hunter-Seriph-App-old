@@ -601,7 +601,7 @@ var MERCHNAME = { npc_joff: 'Joff', npc_beebs: 'Uncle Beeb', npc_kaya: 'Kaya', n
    Tiles: 0 air, 1 wall, 2 one-way ledge, 3 spikes, 4 illusion wall (looks solid, walk through),
           5 illusion ledge (gives way under you), 6 barrier (solid only while a fight has the room locked)
    ===================================================================================================== */
-var TA = 0, TW = 1, TL = 2, TS = 3, TF = 4, TV = 5, TB = 6;
+var TA = 0, TW = 1, TL = 2, TS = 3, TF = 4, TV = 5, TB = 6, TG = 7;
 var WORLD = null;
 function key2(x, y) { return x + ',' + y; }
 var DIRV = { l: [-1, 0], r: [1, 0], u: [0, -1], d: [0, 1] }, OPP = { l: 'r', r: 'l', u: 'd', d: 'u' };
@@ -678,7 +678,7 @@ function buildRoom(rm) {
   if (ex.l) { for (y = 12; y <= 14; y++) S(0, y, TA); RS(0, 10, 4, 14); }
   if (ex.r) { for (y = 12; y <= 14; y++) S(W - 1, y, TA); RS(W - 5, 10, W - 1, 14); }
   if (ex.u) { for (x = 14; x <= 17; x++) S(x, 0, TA); RS(12, 0, 19, 3); }
-  if (ex.d) { for (x = 14; x <= 17; x++) S(x, H - 1, TA); RS(12, 10, 19, 15); }
+  if (ex.d) { for (x = 14; x <= 17; x++) S(x, H - 1, TG); RS(12, 10, 19, 15); }
   function plat(x0, x1, y, v) { for (var x = x0; x <= x1; x++) S(x, y, v || TL); RS(x0, y - 3, x1, y - 1); RS(x0, y, x1, y); }
   if (ex.u) { plat(9, 13, 12); plat(18, 22, 8); plat(12, 16, 4); }
   var t = rm.type, nE = 0, cx0 = ex.d ? 23 : 16, cxp = cx0 * T;
@@ -862,7 +862,7 @@ function moveBody(b, dt, grav) {
     for (var tx = tx0; tx <= tx1; tx++) {
       if (tx < 0 || ty < 0 || tx >= L.w || ty >= L.h) continue;
       var t = L.tiles[ty * L.w + tx], top = ty * T;
-      if (solidT(t) || ((t === TL || t === TV) && prevY <= top + 0.5 && !b.drop)) { b.y = top; b.vy = 0; b.onGround = true; if (t === TV) b.stand = ty * L.w + tx; break; }
+      if (solidT(t) || ((t === TL || t === TV || t === TG) && prevY <= top + 0.5 && !b.drop)) { b.y = top; b.vy = 0; b.onGround = true; if (t === TV) b.stand = ty * L.w + tx; break; }
     }
     if (!b.onGround) { hit = boxSolid(b.x - hw, b.y - 1, b.x + hw, b.y); if (hit) { b.y = hit.ty * T; b.vy = 0; b.onGround = true; } }
   }
@@ -873,6 +873,7 @@ function updatePlayer(dt) {
   var jumpPressed = input.j && !P.prevJump; P.prevJump = input.j;
   var atkPressed = input.a && !P.prevAtk; P.prevAtk = input.a;
   var specPressed = input.s && !P.prevSpec; P.prevSpec = input.s;
+  if (P.drop > 0) { P.drop -= dt; if (P.drop <= 0) P.drop = 0; }
   if (P.inv > 0) P.inv -= dt; if (P.atkCd > 0) P.atkCd -= dt; if (P.attackT > 0) P.attackT -= dt; if (P.jumpStartT > 0) P.jumpStartT -= dt;
   if (P.ooze > 0) { P.ooze -= dt; P.oozeT -= dt; if (P.oozeT <= 0) { P.oozeT = 0.5; healP(4); } }
   if (P.state === 'dead') {
@@ -985,7 +986,7 @@ function roomEdges() {
   else if (P.y - P.h / 2 < 0 && P.vy < 0 && rm.ex.u) { nk = key2(rm.cx, rm.cy - 1); d = 'u'; }
   else if (P.y - P.h / 2 > H && rm.ex.d) { nk = key2(rm.cx, rm.cy + 1); d = 'd'; }
   if (nk && WORLD.rooms[nk]) { G.fade = 0.18; enterRoom(nk, { dir: d, x: P.x, y: P.y }); }
-  else { P.x = clamp(P.x, 6, W - 6); if (P.y > H + 60) { P.y = 15 * T; P.x = 16 * T; } }
+  else { if (!rm.ex.l && P.x < 6) P.x = 6; if (!rm.ex.r && P.x > W - 6) P.x = W - 6; if (P.y > H + 60) { P.y = 15 * T; P.x = L.spawnX; } }
 }
 function bodyInFake() { var tx0 = Math.floor((P.x - P.w / 2) / T), tx1 = Math.floor((P.x + P.w / 2) / T), ty0 = Math.floor((P.y - P.h) / T), ty1 = Math.floor((P.y - 1) / T); for (var ty = ty0; ty <= ty1; ty++) for (var tx = tx0; tx <= tx1; tx++) if (tx >= 0 && ty >= 0 && tx < L.w && ty < L.h && L.tiles[ty * L.w + tx] === TF) return true; return false; }
 function crumble(i) { if (G.crumble[i] === undefined) { G.crumble[i] = 0.4; sfx.land(); } }
@@ -1011,7 +1012,7 @@ function updateEnemies(dt) {
       else { e.vx = e.face * sp; e.cd -= dt;
         if (ai === 'heavy' && adx < 150 && e.cd <= 0 && e.onGround) { e.cd = 3.2; e.vy = -260; e.slam = 1; }
         var ax = e.x + e.face * (e.w / 2 + 2), below = tileAt(ax, e.y + 4);
-        if (e.onGround && !solidT(below) && below !== TL && below !== TV) e.face = -e.face;
+        if (e.onGround && !solidT(below) && below !== TL && below !== TV && below !== TG) e.face = -e.face;
         if (e.hitWall) e.face = -e.face; }
       var wasG = e.onGround; moveBody(e, dt, GRAV);
       if (e.slam && e.onGround && !wasG) { e.slam = 0; G.shake = 6; sfx.land(); waves.push({ x: e.x - 16, y: e.y, dir: -1, life: 1.4, dmg: e.dmg }, { x: e.x + 16, y: e.y, dir: 1, life: 1.4, dmg: e.dmg }); }
@@ -1127,7 +1128,7 @@ function updateDrops(dt) {
     var d = drops[i]; d.age += dt;
     if (d.fly) {
       d.vy += 700 * dt; d.x += d.vx * dt; var py = d.y; d.y += d.vy * dt;
-      var t = tileAt(d.x, d.y + 5); if (d.vy > 0 && (solidT(t) || ((t === TL || t === TV) && py + 5 <= Math.floor((d.y + 5) / T) * T + 1))) { d.y = Math.floor((d.y + 5) / T) * T - 5; d.vy *= -0.5; d.vx *= 0.8; if (Math.abs(d.vy) < 30) d.vy = 0; }
+      var t = tileAt(d.x, d.y + 5); if (d.vy > 0 && (solidT(t) || ((t === TL || t === TV || t === TG) && py + 5 <= Math.floor((d.y + 5) / T) * T + 1))) { d.y = Math.floor((d.y + 5) / T) * T - 5; d.vy *= -0.5; d.vx *= 0.8; if (Math.abs(d.vy) < 30) d.vy = 0; }
       if (solidT(tileAt(d.x, d.y))) d.vx = -d.vx;
       if (d.age > 9 || d.y > L.h * T + 30) continue;
     }
@@ -1148,6 +1149,7 @@ function findNear() {
     if (e.k === 'chest' && !e.open) r = 22; else if (e.k === 'door') r = 26; else if (e.k === 'npc') r = 26; else if (e.k === 'altar' && !e.taken) r = 24; else return;
     if (dx < r && dy < 30 && dx < bd) { bd = dx; best = e; }
   });
+  if (!best && P.onGround && (tileAt(P.x, P.y + 2) === TG)) best = { k: 'grate', x: P.x, y: P.y };
   return best;
 }
 function useThing(e) {
@@ -1159,6 +1161,7 @@ function useThing(e) {
   } else if (e.k === 'door') openDoor(e);
   else if (e.k === 'npc') openMerchant(e);
   else if (e.k === 'altar') openAltar(e);
+  else if (e.k === 'grate') { P.drop = 0.3; P.onGround = false; P.vy = 80; sfx.door(); }
 }
 function grantPower(id) {
   var p = powerById(id); RUN.powers.push(id); var oldM = ST.mhp; ST = calcStats();
@@ -1189,7 +1192,7 @@ function lockExits(on) {
   if (rm.ex.l) for (y = 12; y <= 14; y++) S(0, y, on ? TB : TA);
   if (rm.ex.r) for (y = 12; y <= 14; y++) S(W - 1, y, on ? TB : TA);
   if (rm.ex.u) for (x = 14; x <= 17; x++) S(x, 0, on ? TB : TA);
-  if (rm.ex.d) for (x = 14; x <= 17; x++) S(x, L.h - 1, on ? TB : TA);
+  if (rm.ex.d) for (x = 14; x <= 17; x++) S(x, L.h - 1, on ? TB : TG);
 }
 function spawnWave(n) {
   var pool = AREAS[G.rm.area].pool, tot = 0; pool.forEach(function (p) { tot += p[1]; });
@@ -1696,6 +1699,9 @@ function buildLayer() {
       var up = y > 0 ? L.tiles[(y - 1) * W + x] : TW;
       if (!wallish(up)) { g.fillStyle = th.e1; g.fillRect(px, py, T, 1); g.fillStyle = th.e2; g.fillRect(px, py + 1, T, 2); }
       var dn = y < H - 1 ? L.tiles[(y + 1) * W + x] : TW; if (!wallish(dn)) { g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(px, py + T - 2, T, 2); }
+    } else if (t === TG) {
+      g.fillStyle = '#0c0305'; g.fillRect(px, py, T, 6); g.fillStyle = '#5a5a66'; g.fillRect(px, py, T, 2); g.fillStyle = '#2a2a32'; for (var gb = 1; gb < T; gb += 4) g.fillRect(px + gb, py + 2, 2, 4);
+      g.fillStyle = th.e1; g.fillRect(px, py, T, 1);
     } else if (t === TL || t === TV) {
       g.fillStyle = '#1a0507'; g.fillRect(px, py, T, 7);
       if (ok(imgs.bricks)) g.drawImage(imgs.bricks, px % 32, 0, T, 7, px, py, T, 7);
@@ -1726,15 +1732,11 @@ function drawExits(cx) {
       R(ctx, '#0c0305', d === 'l' ? x0 + T : x0 - 4, 12 * T - 10, 4, 3 * T + 10);
       ctx.shadowColor = col; ctx.shadowBlur = 10 * pulse; ctx.strokeStyle = col; ctx.lineWidth = 2;
       ctx.beginPath(); if (d === 'l') { ctx.moveTo(x0, 12 * T - 6); ctx.quadraticCurveTo(x0 + T + 2, 12 * T - 12, x0 + T + 2, 12 * T + 6); ctx.lineTo(x0 + T + 2, 15 * T); } else { ctx.moveTo(x0 + T, 12 * T - 6); ctx.quadraticCurveTo(x0 - 2, 12 * T - 12, x0 - 2, 12 * T + 6); ctx.lineTo(x0 - 2, 15 * T); } ctx.stroke();
-      ctx.shadowBlur = 0; chevron(d === 'l' ? x0 + T + 12 + Math.sin(G.t * 5) * 2 : x0 - 12 - Math.sin(G.t * 5) * 2, 13 * T + 4, d, seen && seen.v ? '#a6968f' : '#ffe36a', 5);
-      if (lbl) text(lbl, d === 'l' ? x0 + T + 4 : x0 - 4, 12 * T - 16, d === 'l' ? 'left' : 'right', '#ffe36a', 6);
     } else {
       var hx = Math.round(14 * T - cx), hw = 4 * T, hy = d === 'u' ? T : H - T;
       var gr = ctx.createLinearGradient(0, d === 'u' ? hy : hy, 0, d === 'u' ? hy + 18 : hy - 18); gr.addColorStop(0, 'rgba(255,38,48,' + (0.45 * pulse).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(255,38,48,0)');
       ctx.fillStyle = gr; ctx.fillRect(hx, d === 'u' ? hy : hy - 18, hw, 18);
       R(ctx, col, hx - 3, d === 'u' ? hy - 1 : hy, 3, 2); R(ctx, col, hx + hw, d === 'u' ? hy - 1 : hy, 3, 2);
-      chevron(hx + hw / 2, d === 'u' ? hy + 18 - Math.sin(G.t * 5) * 2 : hy - 18 + Math.sin(G.t * 5) * 2, d, seen && seen.v ? '#a6968f' : '#ffe36a', 5);
-      if (lbl) text(lbl, hx + hw / 2, d === 'u' ? hy + 40 : hy - 32, 'center', '#ffe36a', 6);
     }
     ctx.restore();
   }
@@ -1876,7 +1878,7 @@ function drawHud() {
 }
 function drawPrompt(cx) {
   var e = G.near; if (!e || G.paused) { el('bBt').textContent = G.mode === 'town' ? '·' : 'HIT'; el('bB').classList.remove('use'); return; }
-  var t = e.k === 'chest' ? 'OPEN' : e.k === 'door' ? 'ENTER' : e.k === 'npc' ? 'TALK' : e.k === 'altar' ? 'TAKE' : e.k === 'gate' ? 'ENTER' : e.k === 'bld' ? (META.built[e.b.id] ? 'ENTER' : 'BUY') : 'USE';
+  var t = e.k === 'grate' ? 'DOWN' : e.k === 'chest' ? 'OPEN' : e.k === 'door' ? 'ENTER' : e.k === 'npc' ? 'TALK' : e.k === 'altar' ? 'TAKE' : e.k === 'gate' ? 'ENTER' : e.k === 'bld' ? (META.built[e.b.id] ? 'ENTER' : 'BUY') : 'USE';
   el('bBt').textContent = t; el('bB').classList.add('use');
   var lbl = e.k === 'bld' ? (META.built[e.b.id] ? e.b.name : 'EMPTY LOT · ' + fmtN(e.b.cost)) : e.k === 'gate' ? 'THE CASTLE' : e.k === 'door' ? (e.boss === 'blum' ? 'THE BLUMHEAD DOOR' : BOSSDEF[e.boss].name) : e.k === 'npc' ? MERCHNAME[e.who] : '';
   var y = e.k === 'bld' || e.k === 'gate' ? 66 : e.y - (e.k === 'door' ? 92 : 44);
