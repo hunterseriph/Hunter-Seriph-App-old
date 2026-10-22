@@ -267,6 +267,8 @@ h2{font-family:var(--display);font-weight:400;font-size:clamp(30px,8vw,46px);lin
   .eqRow{padding:2px 0}.eqRow small{font-size:5px}
   #inv .ffwrap{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
 }
+#title{position:fixed;inset:0;z-index:20;background-color:#050203}
+@media (max-height:460px){#title{flex-direction:row;align-items:center;justify-content:space-around;padding:10px 24px}#title .tt{flex:1}#title h1 .logo{max-height:56vh;width:min(300px,40vw)}#titleMenu{flex:1;max-width:460px}}
 #title h1 .logo{display:block;width:min(380px,78vw);max-height:34vh;height:auto;object-fit:contain;margin:0 auto;filter:drop-shadow(0 4px 0 rgba(0,0,0,.6))}
 </style>
 
@@ -935,7 +937,7 @@ function renderShop(note) {
     var id = row[0], cost = pr(row[1]), d = ITEMS[id];
     list.appendChild(mkBtn('use', d.name + '  ·  ' + cost + ' drops', function () {
       sfx.click(); buyQty(id, cost, G.gold, 'drops', function (n) { G.gold -= n * cost; giveN(id, n); sfx.pick(G.t); repShop(G.shop, 2, G.shopWho); renderShop('Bought ' + (n > 1 ? n + ' x ' : 'the ') + d.name + '.'); }, function (note) { renderShop(note); });
-    }, d.info));
+    }));
   });
   sd.svc.forEach(function (sv) {
     if (G.shopRoom && sv.k === 'rest') return;
@@ -964,7 +966,7 @@ function renderSell(note) {
   var any = false;
   P.inv.forEach(function (o, i) {
     if (o.eq || o.lk) return; any = true; var d = ITEMS[o.id], v = sellVal(o.id);
-    list.appendChild(mkBtn('use', d.name + '  ·  +' + v + ' drops', function () { P.inv.splice(i, 1); G.gold += v; sfx.pick(G.t); renderSell('Sold the ' + d.name + ' for ' + v + '.'); }, d.info));
+    list.appendChild(mkBtn('use', d.name + '  ·  +' + v + ' drops', function () { P.inv.splice(i, 1); G.gold += v; sfx.pick(G.t); renderSell('Sold the ' + d.name + ' for ' + v + '.'); }));
   });
   if (!any) { var e = document.createElement('p'); e.className = 'px dim'; e.textContent = 'Nothing to sell. Equipped gear stays with you.'; list.appendChild(e); }
   showEq(true);
@@ -1395,7 +1397,7 @@ function enterBuilding(id) {
 }
 function exitBuilding() { var id = G.inn; sfx.stairs && sfx.stairs(); genHub(id); G.fade = 0.4; G.lock = 0.2; }
 function enterDungeon() {
-  G.hub = false; G.endless = !!G.wantEndless; G.wantEndless = false; G.potUsed = 0; G.runMs = 0; G.floor = 1; G.turn = 0; G.kills = 0; G.gold = 0; G.cause = ''; G.tokRun = 0; G.stockRun = {}; G.gotArmor = false; G.pulsarUntil = 0; msgs = []; deepSetup();
+  G.hub = false; G.endless = !!G.wantEndless; G.wantEndless = false; G.potUsed = 0; G.runMs = 0; G.floor = 1; G.turn = 0; G.kills = 0; G.gold = 0; G.cause = ''; G.tokRun = 0; G.stockRun = {}; G.gotArmor = {}; G.pulsarUntil = 0; msgs = []; deepSetup();
   META.runs++; saveMeta(); P.swUsed = false; P.bf = {};
   genFloor(1); say('You enter the Crypt of the Red Moon.', '#ff2630'); G.fade = 0.5; G.lock = 0.3; saveRun();
 }
@@ -3725,7 +3727,7 @@ function gainXp(n) {
 }
 var SAVEKEY = 'cq-save';
 function saveRun() {
-  try { localStorage.setItem(SAVEKEY, JSON.stringify({ sr: G.stockRun || {}, ga: !!G.gotArmor, pu: G.pulsarUntil, deep: G.deep, endless: !!G.endless, runMs: G.runMs || 0, potUsed: G.potUsed || 0, floor: G.floor, gold: G.gold, kills: G.kills, turn: G.turn, P: { hp: P.hp, mhp: P.mhp, lvl: P.lvl, xp: P.xp, belly: P.belly, mbelly: P.mbelly, str: P.str, dex: P.dex, int: P.int, pts: P.pts, inv: P.inv }, ch: P.ch, swUsed: P.swUsed, pet: P.pet ? { tk: P.pet.tk, tn: P.pet.tn, atk: P.pet.atk, id: P.pet.id, xp: P.pet.xp, lvl: P.pet.lvl } : null })); } catch (e) {}
+  try { localStorage.setItem(SAVEKEY, JSON.stringify({ sr: G.stockRun || {}, ga: G.gotArmor || {}, pu: G.pulsarUntil, deep: G.deep, endless: !!G.endless, runMs: G.runMs || 0, potUsed: G.potUsed || 0, floor: G.floor, gold: G.gold, kills: G.kills, turn: G.turn, P: { hp: P.hp, mhp: P.mhp, lvl: P.lvl, xp: P.xp, belly: P.belly, mbelly: P.mbelly, str: P.str, dex: P.dex, int: P.int, pts: P.pts, inv: P.inv }, ch: P.ch, swUsed: P.swUsed, pet: P.pet ? { tk: P.pet.tk, tn: P.pet.tn, atk: P.pet.atk, id: P.pet.id, xp: P.pet.xp, lvl: P.pet.lvl } : null })); } catch (e) {}
 }
 function clearSave() { try { localStorage.removeItem(SAVEKEY); } catch (e) {} refreshCont(); }
 function readSave() { try { var v = JSON.parse(localStorage.getItem(SAVEKEY) || 'null'); if (v && v.P && v.floor) return v; } catch (e) {} return null; }
@@ -3737,7 +3739,7 @@ function continueRun() {
   P.ch = CHARS[sv.ch] ? sv.ch : 'cumhead'; P.swUsed = !!sv.swUsed; P.bf = {}; G.deep = !!sv.deep; G.endless = !!sv.endless; G.runMs = sv.runMs || 0; G.potUsed = sv.potUsed || 0; P.nh = 0; G.tokRun = 0; initPet();
   if (sv.pet && sv.pet.id === 'tamed' && restoreTamed(sv.pet)) { }
   else if (sv.pet && P.pet.id !== 'frog' && P.pet.id !== 'cat') { P.pet.id = META.pets[sv.pet.id] ? sv.pet.id : 'gloop'; P.pet.xp = sv.pet.xp; P.pet.lvl = sv.pet.lvl; }
-  G.pulsarUntil = sv.pu || 0; G.stockRun = sv.sr || {}; G.gotArmor = !!sv.ga; G.floor = sv.floor; G.gold = sv.gold; G.kills = sv.kills; G.turn = sv.turn; G.cause = ''; msgs = [];
+  G.pulsarUntil = sv.pu || 0; G.stockRun = sv.sr || {}; G.gotArmor = (sv.ga && typeof sv.ga === 'object') ? sv.ga : (sv.ga ? { armor: true } : {}); G.floor = sv.floor; G.gold = sv.gold; G.kills = sv.kills; G.turn = sv.turn; G.cause = ''; msgs = [];
   genFloor(G.floor); say('You pick up where you left off, on B' + G.floor + 'F.', '#ff2630'); G.state = 'play'; queued = null; G.lock = 0.2;
 }
 function hurtMon(m, dmg, byPlayer) {
@@ -3787,8 +3789,9 @@ function addItem(id) {
   if (kindCount(ITEMS[id].k) >= capOf(ITEMS[id].k)) return false; P.inv.push({ id: id }); return true;
 }
 function firstArmor(id) {
-  var k = ITEMS[id].k; if (G.gotArmor || ['armor', 'head', 'arms', 'legs'].indexOf(k) < 0) return;
-  G.gotArmor = true; var e = P.inv[P.inv.length - 1]; if (!e || e.id !== id) return;
+  var k = ITEMS[id].k; if (['armor', 'head', 'arms', 'legs'].indexOf(k) < 0) return;
+  if (typeof G.gotArmor !== 'object' || !G.gotArmor) G.gotArmor = {}; if (G.gotArmor[k]) return;
+  G.gotArmor[k] = true; var e = P.inv[P.inv.length - 1]; if (!e || e.id !== id) return;
   if (P.inv.some(function (o) { return o.eq && ITEMS[o.id].k === k; })) return;
   e.eq = true; say('You put on the ' + ITEMS[id].name + ' right away.', '#ffe36a');
 }
