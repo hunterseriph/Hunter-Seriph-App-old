@@ -900,11 +900,13 @@ function genShop(n, id) {
   G.doorX = r.cx - 1;
   var nx = sd.door ? r.cx + 1 : r.cx, ny = y + 2;
   addNpcs(id, nx, ny, 2);
-  if (sd.stock === 'dyn') {
+  var ck = id + ':' + n; if (!G.stockRun) G.stockRun = {};
+  if (sd.stock === 'dyn' && G.stockRun[ck]) G.shopStock = G.stockRun[ck];
+  else if (sd.stock === 'dyn') {
     var ws = []; for (var k in ITEMS) { var di = ITEMS[k]; if (di.k === 'weapon' && (di.w > 0 || di.lock) && di.minF <= n + 18 && di.minF >= Math.max(1, n - 14)) ws.push(k); }
     ws.sort(function (p, q) { return ITEMS[q].val - ITEMS[p].val; });
     var top = ws.slice(0, 2), rest = ws.slice(2).sort(function () { return Math.random() - 0.5; });
-    G.shopStock = top.concat(rest.slice(0, 2)).map(function (k) { return [k, ITEMS[k].val * 1.5]; }); G.shopStock.push(['stim', 10]);
+    G.shopStock = top.concat(rest.slice(0, 2)).map(function (k) { return [k, ITEMS[k].val * 1.5]; }); G.shopStock.push(['stim', 10]); G.stockRun[ck] = G.shopStock;
   } else G.shopStock = sd.stock;
   G.banner = { age: 0, a: 'B' + n + 'F', b: 'REST STOP · ' + sd.name, boss: false };
   petReset(); updateVis(); camSnap(); say('You find ' + sd.name + ' on the way down.', '#ffe36a');
@@ -918,7 +920,7 @@ function openShop(m) {
   if (m.shop === 'sanct') { openSanct(); return; }
   G.shopWho = m.who;
   if (G.hub) { openHubShop(m); return; }
-  if (m.floorShop) { G.shop = m.shop; G.shopRoom = true; G.shopStock = shopStockFor(m.shop, G.floor); }
+  if (m.floorShop) { G.shop = m.shop; G.shopRoom = true; if (!m.stk) m.stk = shopStockFor(m.shop, G.floor); G.shopStock = m.stk; }
   var sd = SHOPS[m.shop]; G.state = 'shop'; sfx.click();
   var note = sd.quote, tk = m.shop + (m.who || ''); if (!G.talk) G.talk = {}; if (!G.talk[tk]) { G.talk[tk] = 1; repShop(m.shop, 1, m.who); }
   if (m.shop === 'pulsar') { if (G.pulsarUntil && G.floor <= G.pulsarUntil) note = '"Already riding the wave. Stay chill."'; else { pulsarOn(); repShop('pulsar', 3); note = '"Let the waves carry you. Music\'s on me until the next boss floor ends."'; } }
@@ -952,7 +954,7 @@ function renderShop(note) {
     if (P.stim > 0) { sfx.click(); renderShop('Combat Stims are already working. They do not stack.'); return; }
     var sd2 = SHOPS[G.shop]; repShop(G.shop, 2, G.shopWho); closeShop(); stimStay(sd2);
   }, '+10% all stats for 50 moves · you wake on the next floor with it already running'));
-  var nSell = P.inv.filter(function (o) { return !o.eq; }).length;
+  var nSell = P.inv.filter(function (o) { return !o.eq && !o.lk; }).length;
   if (G.shop !== 'arcade' || nSell) list.appendChild(mkBtn('use', 'SELL ITEMS  ·  ' + nSell + ' in pack', function () { renderSell(); }, 'Trade pack items for drops'));
   showEq(true);
 }
@@ -961,13 +963,13 @@ function renderSell(note) {
   var sd = SHOPS[G.shop], list = setShop(sd.name + ' · SELL', 'YOUR DROPS: ' + G.gold + (note ? '   ·   ' + note : ''), function () { renderShop(); });
   var any = false;
   P.inv.forEach(function (o, i) {
-    if (o.eq) return; any = true; var d = ITEMS[o.id], v = sellVal(o.id);
+    if (o.eq || o.lk) return; any = true; var d = ITEMS[o.id], v = sellVal(o.id);
     list.appendChild(mkBtn('use', d.name + '  ·  +' + v + ' drops', function () { P.inv.splice(i, 1); G.gold += v; sfx.pick(G.t); renderSell('Sold the ' + d.name + ' for ' + v + '.'); }, d.info));
   });
   if (!any) { var e = document.createElement('p'); e.className = 'px dim'; e.textContent = 'Nothing to sell. Equipped gear stays with you.'; list.appendChild(e); }
   showEq(true);
 }
-el('shopClose').addEventListener('click', function () { sfx.click(); if (G.sBack) G.sBack(); else { var mbl = G.mbLeave && G.shop === 'masterbates'; closeShop(); if (mbl) { G.mbLeave = false; descend(); } } });
+el('shopClose').addEventListener('click', function () { sfx.click(); if (G.sBack) G.sBack(); else closeShop(); });
 
 /* ----- drawing ----- */
 function drawShopDecor(camx, camy) {
@@ -1393,7 +1395,7 @@ function enterBuilding(id) {
 }
 function exitBuilding() { var id = G.inn; sfx.stairs && sfx.stairs(); genHub(id); G.fade = 0.4; G.lock = 0.2; }
 function enterDungeon() {
-  G.hub = false; G.endless = !!G.wantEndless; G.wantEndless = false; G.potUsed = 0; G.runMs = 0; G.floor = 1; G.turn = 0; G.kills = 0; G.gold = 0; G.cause = ''; G.tokRun = 0; G.pulsarUntil = 0; msgs = []; deepSetup();
+  G.hub = false; G.endless = !!G.wantEndless; G.wantEndless = false; G.potUsed = 0; G.runMs = 0; G.floor = 1; G.turn = 0; G.kills = 0; G.gold = 0; G.cause = ''; G.tokRun = 0; G.stockRun = {}; G.gotArmor = false; G.pulsarUntil = 0; msgs = []; deepSetup();
   META.runs++; saveMeta(); P.swUsed = false; P.bf = {};
   genFloor(1); say('You enter the Crypt of the Red Moon.', '#ff2630'); G.fade = 0.5; G.lock = 0.3; saveRun();
 }
@@ -3170,6 +3172,169 @@ function fleshTick() {
 IC.scrollClarity = IC.scroll('#ff9ac0');
 addDef('scrollClarity', { name: 'Scroll of Clarity', k: 'scroll', minF: 4, w: 3, info: 'Reveals every trap and secret room on the floor' }, IC.scrollClarity);
 if (SHOPS.masterbates) SHOPS.masterbates.stock.push(['scrollClarity', 12]);
+/* ===== update 19: shotgun, sausage, meatnado scroll, vending machine, endless areas, doors, flames ===== */
+IC.shotgun = oi(function (g) { R(g, '#2a2a30', 1, 6, 14, 2); R(g, '#4a4a54', 1, 8, 12, 1); R(g, '#6a3a1a', 1, 8, 5, 4); R(g, '#8a5a2a', 2, 9, 3, 2); R(g, '#2a2a30', 7, 9, 3, 1); R(g, '#9a9aa6', 10, 5, 5, 1); R(g, '#ffe36a', 15, 6, 1, 2); });
+IC.sausage = oi(function (g) { R(g, '#3a1008', 2, 6, 12, 5); R(g, '#a8321a', 3, 7, 10, 3); R(g, '#d8583a', 4, 7, 7, 1); R(g, '#7a1a0e', 3, 9, 10, 1); R(g, '#e8c8a0', 1, 7, 1, 3); R(g, '#e8c8a0', 14, 7, 1, 3); });
+IC.scrollNado = IC.scroll('#ff9a40');
+addDef('shotgun', { name: 'Shotgun', k: 'weapon', hand: 'heavy', val: 16, ranged: 'shotgun', minF: 12, w: 2, info: 'Two-handed ranged. Press A: blasts the tile in front of you and the 2 tiles beside it. Costs drops as shells' }, IC.shotgun);
+addDef('sausage', { name: 'The Sausage', k: 'weapon', hand: 'light', val: 20, minF: 99, w: 0, info: 'Light, one-handed · ATK +20 · a legend. Only a meatnado ever drops it' }, IC.sausage);
+addDef('scrollNado', { name: 'Meatnado Scroll', k: 'scroll', minF: 8, w: 2, info: 'Summons a meatnado: scatters every foe in sight, killing some and teleporting the rest. Small chance to drop The Sausage' }, IC.scrollNado);
+if (SHOPS.masterbates) SHOPS.masterbates.stock.push(['scrollNado', 25]);
+
+var _fr4 = fireRanged;
+fireRanged = function () {
+  var we = rangedW(); if (!we || ITEMS[we.id].ranged !== 'shotgun') return _fr4();
+  var d = ITEMS[we.id], en = (we.en && we.en.atk) || 0, best = null, order = [P.face, 'u', 'd', 'l', 'r'];
+  order.forEach(function (k) {
+    var dv = DIRS[k]; if (!dv) return; var pv = [dv[1], dv[0]], tiles = [], n = 0;
+    [0, 1, -1].forEach(function (o) { var x = P.x + dv[0] + pv[0] * o, y = P.y + dv[1] + pv[1] * o; if (!walk(x, y)) return; tiles.push([x, y]); var m = monAt(x, y); if (m && !m.npc) n++; });
+    if (n > (best ? best.n : 0)) best = { k: k, n: n, tiles: tiles };
+  });
+  if (!best) return false;
+  var cost = 2 + Math.floor(G.floor / 6); if (G.gold < cost) { say('Not enough drops for shells (' + cost + ' needed).', '#ff9a40'); sfx.click(); return true; }
+  G.gold -= cost; P.face = best.k; var hits = 0, tot = 0;
+  best.tiles.forEach(function (t) {
+    fx.push({ k: 'bolt', x0: P.x + 0.5, y0: P.y + 0.5, x1: t[0] + 0.5, y1: t[1] + 0.5, age: 0 });
+    var m = monAt(t[0], t[1]); if (!m || m.npc) return;
+    if (Math.random() < 0.92) { var dm = Math.max(1, d.val + Math.floor(DX() * 0.6) + en - m.def + rnd(-1, 3)); hits++; tot += dm; m.inv = 0; hurtMon(m, dm, true); afterHit(we, dm, m); } else pop(m.x, m.y, 'miss', '#a6968f');
+  });
+  sfx.hit(); G.shake = Math.max(G.shake, 4); say('BOOM! The shotgun hits ' + hits + ' foe' + (hits === 1 ? '' : 's') + ' for ' + tot + '. (-' + cost + ' drops)', '#ffe36a'); endTurn(0.17); return true;
+};
+
+var _eu4 = extUse;
+extUse = function (i) {
+  var it = P.inv[i]; if (!it || it.id !== 'scrollNado') return _eu4(i);
+  P.inv.splice(i, 1); sfx.scroll(); G.shake = Math.max(G.shake, 6);
+  var seen = mons.filter(function (m) { return !m.npc && m.hp > 0 && vis[idx(m.x, m.y)]; }), killed = 0, tele = 0;
+  seen.forEach(function (m) {
+    pop(m.x, m.y, 'WHOOSH', '#ff9a40');
+    if (!m.d.boss && Math.random() < 0.4) { killed++; m.inv = 0; hurtMon(m, m.hp + 999, true); return; }
+    for (var t = 0; t < 300; t++) {
+      var x = rnd(1, MW - 2), y = rnd(1, MH - 2); if (!walk(x, y) || monAt(x, y) || (x === P.x && y === P.y) || (G.stairs && x === G.stairs.x && y === G.stairs.y) || cheb(x, y, P.x, P.y) < 6) continue;
+      m.x = x; m.y = y; m.rx = x; m.ry = y; m.asleep = false; m.flash = 0.2; tele++; pop(x, y, '?!', '#ffe36a'); break;
+    }
+  });
+  say(seen.length ? 'The meatnado rips through the room! ' + killed + ' foe' + (killed === 1 ? '' : 's') + ' shredded, ' + tele + ' flung away.' : 'The meatnado spins up... and finds nobody.', '#ff9a40');
+  if (Math.random() < 0.07) { dropNear(P.x, P.y, { id: 'sausage' }); say('Something heavy thumps down beside you. THE SAUSAGE!', '#ffe36a'); pop(P.x, P.y, 'SAUSAGE', '#ffe36a'); }
+  keepInvOpen(); endTurn(0.1); return true;
+};
+
+/* ----- vending machine ----- */
+var _gfs4 = genFloorShop;
+genFloorShop = function (n) {
+  _gfs4(n); if (n < 3 || Math.random() > 0.2 || !rooms.length) return;
+  var rm = rooms[rnd(0, rooms.length - 1)], c = floorCell(rm, { x: P.x, y: P.y }); if (!c || monAt(c.x, c.y)) return;
+  mons.push(npcEnt({ vend: true, name: 'DROP-O-MATIC', x: c.x, y: c.y }));
+};
+function vendRender(note) {
+  var list = el('shopList'); list.innerHTML = ''; G.sBack = null; el('shopClose').textContent = 'LEAVE'; el('shopTitle').textContent = 'DROP-O-MATIC';
+  var sub = document.createElement('p'); sub.className = 'px dim'; sub.textContent = (note || '"Insert drops. Receive tokens. 100 drops per token."') + '   ·   YOUR DROPS: ' + G.gold + '   ·   TOKENS: ' + META.tokens; list.appendChild(sub);
+  var max = Math.floor(G.gold / 100);
+  [1, 5, 10, 0].forEach(function (q) {
+    var n = q || max, lab = q ? 'BUY ' + q + ' TOKEN' + (q > 1 ? 'S' : '') + '  ·  ' + q * 100 + ' drops' : 'CONVERT ALL  ·  ' + max + ' token' + (max === 1 ? '' : 's') + ' for ' + max * 100 + ' drops';
+    var b = mkBtn('use', lab, function () {
+      if (n < 1 || G.gold < n * 100) { sfx.click(); vendRender('Not enough drops.'); return; }
+      G.gold -= n * 100; addTokens(n); sfx.pick(G.t); vendRender('CLUNK. ' + n + ' token' + (n > 1 ? 's' : '') + ' dispensed.');
+    }); if (n < 1 || G.gold < n * 100) b.style.opacity = 0.5; list.appendChild(b);
+  });
+}
+var _ose4 = openShopExt;
+openShopExt = function (m) {
+  if (m.vend) { G.state = 'shop'; sfx.click(); vendRender(); el('shop').hidden = false; return true; }
+  return _ose4(m);
+};
+function vendSprite(cx, by) {
+  var x = Math.round(cx) - 10, y = Math.round(by) - 30;
+  ctx.fillStyle = '#12040a'; ctx.fillRect(x - 1, y - 1, 22, 32); ctx.fillStyle = '#a8141e'; ctx.fillRect(x, y, 20, 30); ctx.fillStyle = '#7a0f18'; ctx.fillRect(x, y, 3, 30);
+  ctx.fillStyle = '#12040a'; ctx.fillRect(x + 3, y + 3, 11, 16); var gl = 0.6 + 0.3 * Math.sin(G.t * 4 + 1);
+  ctx.fillStyle = 'rgba(255,227,106,' + gl.toFixed(2) + ')'; ctx.fillRect(x + 4, y + 4, 9, 14);
+  for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) { ctx.fillStyle = ['#7aff9a', '#ff9ac0', '#9ad0ff'][(r + c) % 3]; ctx.fillRect(x + 5 + c * 3, y + 5 + r * 4, 2, 2); }
+  ctx.fillStyle = '#12040a'; ctx.fillRect(x + 15, y + 5, 4, 3); ctx.fillStyle = '#ffe36a'; ctx.fillRect(x + 16, y + 6, 2, 1);
+  ctx.fillStyle = '#12040a'; ctx.fillRect(x + 4, y + 22, 12, 5); ctx.fillStyle = '#2a0a14'; ctx.fillRect(x + 5, y + 23, 10, 3);
+  text('DROPS>TOKENS', Math.round(cx), y - 4, 'center', '#ffe36a', 5);
+}
+function doorBehind(cx, by, col) {
+  var x = Math.round(cx) - 9, y = Math.round(by) - 31;
+  ctx.fillStyle = '#12040a'; ctx.fillRect(x - 2, y - 2, 22, 34); ctx.fillStyle = col || '#3a1218'; ctx.fillRect(x, y, 18, 32); ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x + 3, y + 3, 12, 28);
+  ctx.fillStyle = '#ffe36a'; ctx.fillRect(x + 14, y + 17, 2, 2);
+}
+var _dn4 = drawNpc;
+drawNpc = function (m, camx, camy) {
+  if (m.hidden) return;
+  if (m.vend) { var cx = m.rx * T - camx + T / 2, by = m.ry * T - camy + T - 3; shadow(cx, by + 1, 10); vendSprite(cx, by); return; }
+  if (m.shop && !m.mach && !m.club && !m.door && !m.board && !G.hub && !G.inn && (m.floorShop || m.secretNpc || !(SHOPS[m.shop] && SHOPS[m.shop].door))) {
+    var cx2 = m.rx * T - camx + T / 2, by2 = m.ry * T - camy + T - 3, sd = SHOPS[m.shop]; doorBehind(cx2, by2 + 2, sd && sd.col ? '#3a1218' : null);
+  }
+  _dn4(m, camx, camy);
+};
+var _dsd4 = drawShopDecor;
+drawShopDecor = function (camx, camy) {
+  _dsd4(camx, camy);
+  if (G.stairs && G.shop && !G.shopRoom) { var sx = G.stairs.x * T - camx, sy = G.stairs.y * T - camy; ctx.fillStyle = '#12040a'; ctx.fillRect(sx + 2, sy - 6, T - 4, T + 6); ctx.fillStyle = '#3a1218'; ctx.fillRect(sx + 4, sy - 4, T - 8, T + 4); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(sx + 7, sy - 1, T - 14, T - 2); ctx.fillStyle = '#ffe36a'; ctx.fillRect(sx + T - 9, sy + 11, 2, 2); text('EXIT', Math.round(sx + T / 2), Math.round(sy - 8), 'center', '#ffe36a', 5); }
+};
+
+/* ----- 15 more areas for endless mode (floor 49 onward, recycling) ----- */
+[
+  ['Neon Slums', '#1a1030', '#120a24', 'rgba(60,0,90,0.5)', 'rgba(255,60,200,0.2)', '#ff2ac0', 300, 'grid'],
+  ['Glass Desert', '#3a3020', '#2a2216', 'rgba(110,80,20,0.4)', 'rgba(255,230,160,0.2)', '#c8a050', 45, 'dots'],
+  ['Clockwork Halls', '#2a2418', '#1c180e', 'rgba(80,60,10,0.5)', 'rgba(255,200,60,0.2)', '#b08a2a', 40, 'cross'],
+  ['Candy Catacombs', '#3a1830', '#2a1024', 'rgba(120,20,90,0.45)', 'rgba(255,150,220,0.22)', '#ff7ac8', 320, 'stripe'],
+  ['Magma Core', '#3a0e06', '#240804', 'rgba(140,20,0,0.5)', 'rgba(255,100,20,0.25)', '#ff4a10', 15, 'crack'],
+  ['Mushroom Grotto', '#1c2a22', '#12201a', 'rgba(10,70,50,0.5)', 'rgba(120,255,180,0.2)', '#2aa070', 150, 'ring'],
+  ['Starfall Terrace', '#10143a', '#0a0e2a', 'rgba(20,20,110,0.5)', 'rgba(180,200,255,0.25)', '#5a6aff', 235, 'star'],
+  ['Crystal Mines', '#1a2a3a', '#101e2c', 'rgba(0,70,110,0.5)', 'rgba(120,240,255,0.25)', '#3ab0d8', 190, 'diamond'],
+  ['Ghost Ship', '#1a2a2a', '#101c1e', 'rgba(30,70,70,0.5)', 'rgba(180,255,240,0.18)', '#6ab0a0', 175, 'plank'],
+  ['Toxic Labs', '#1a2e10', '#102008', 'rgba(40,110,0,0.5)', 'rgba(160,255,40,0.25)', '#8ae020', 85, 'grid'],
+  ['Sandstone Tombs', '#3a2c1c', '#2a1f12', 'rgba(100,70,30,0.45)', 'rgba(255,210,140,0.18)', '#c09050', 35, 'brick'],
+  ['Thunder Spire', '#1c1c2c', '#12121e', 'rgba(40,40,90,0.5)', 'rgba(255,255,120,0.28)', '#e0e040', 55, 'bolt'],
+  ['Amber Hive', '#3a2808', '#281a04', 'rgba(130,80,0,0.5)', 'rgba(255,190,30,0.25)', '#e0a010', 42, 'ring'],
+  ['Obsidian Gate', '#0e0e12', '#08080a', 'rgba(30,0,40,0.6)', 'rgba(160,60,255,0.22)', '#7a2ad0', 275, 'diamond'],
+  ['Pink Salt Flats', '#3a2a30', '#2a1c22', 'rgba(120,60,80,0.4)', 'rgba(255,200,210,0.22)', '#e08090', 350, 'dots']
+].forEach(function (b) { BIOMES.push({ n: b[0], f: [b[1], b[2]], w: b[3], a: b[4], m: b[5], h: b[6], p: b[7] }); });
+var _bio4 = biome;
+biome = function (n) { if (G.endless && n >= 49) return BIOMES[10 + Math.floor((n - 49) / 6) % 15]; return _bio4(n); };
+var _tf4 = trackFor;
+trackFor = function (n) { var i = biomeIdx(n); if (G.pulsarUntil && n <= G.pulsarUntil) return 'pulsar'; return i >= 10 ? 'b' + ((i - 10) % 9) : _tf4(n); };
+function bigPat(bf, x, y, sx, sy) {
+  var h = hash(x * 3 + 1, y * 5 + 2), c = bf.a; ctx.fillStyle = c;
+  switch (bf.p) {
+    case 'grid': ctx.fillRect(sx, sy + T - 1, T, 1); ctx.fillRect(sx + T - 1, sy, 1, T); break;
+    case 'dots': ctx.fillRect(sx + 6, sy + 6, 2, 2); ctx.fillRect(sx + 20, sy + 6, 2, 2); ctx.fillRect(sx + 6, sy + 20, 2, 2); ctx.fillRect(sx + 20, sy + 20, 2, 2); break;
+    case 'cross': if ((x + y) & 1) { ctx.fillRect(sx + 13, sy + 8, 2, 12); ctx.fillRect(sx + 8, sy + 13, 12, 2); } break;
+    case 'stripe': for (var i = 0; i < T; i += 8) ctx.fillRect(sx + i, sy + ((i + x * 3) % T), 4, 2); break;
+    case 'crack': if (h < 0.5) { ctx.fillRect(sx + 4, sy + 10, 8, 1); ctx.fillRect(sx + 11, sy + 10, 1, 8); ctx.fillRect(sx + 11, sy + 17, 9, 1); } break;
+    case 'ring': if (h < 0.5) { ctx.fillRect(sx + 9, sy + 8, 10, 1); ctx.fillRect(sx + 9, sy + 19, 10, 1); ctx.fillRect(sx + 8, sy + 9, 1, 10); ctx.fillRect(sx + 19, sy + 9, 1, 10); } break;
+    case 'star': if (h < 0.35) { var tw = 0.4 + 0.6 * Math.abs(Math.sin(G.t * 2 + h * 40)); ctx.globalAlpha = tw; var px = sx + 4 + Math.floor(h * 90) % 18, py = sy + 4 + Math.floor(h * 333) % 18; ctx.fillRect(px, py - 2, 1, 5); ctx.fillRect(px - 2, py, 5, 1); ctx.globalAlpha = 1; } break;
+    case 'diamond': if ((x + y) & 1) { ctx.fillRect(sx + 13, sy + 6, 2, 2); ctx.fillRect(sx + 10, sy + 10, 2, 2); ctx.fillRect(sx + 16, sy + 10, 2, 2); ctx.fillRect(sx + 7, sy + 14, 2, 2); ctx.fillRect(sx + 19, sy + 14, 2, 2); ctx.fillRect(sx + 13, sy + 22, 2, 2); } break;
+    case 'plank': ctx.fillRect(sx, sy + 9, T, 1); ctx.fillRect(sx, sy + 19, T, 1); ctx.fillRect(sx + ((x & 1) ? 8 : 20), sy, 1, 9); ctx.fillRect(sx + ((x & 1) ? 20 : 8), sy + 10, 1, 9); break;
+    case 'brick': ctx.fillRect(sx, sy + 13, T, 1); ctx.fillRect(sx + 13, sy, 1, 13); ctx.fillRect(sx + 6, sy + 14, 1, 14); ctx.fillRect(sx + 20, sy + 14, 1, 14); break;
+    case 'bolt': if (h < 0.25) { ctx.fillRect(sx + 14, sy + 4, 3, 1); ctx.fillRect(sx + 12, sy + 5, 3, 1); ctx.fillRect(sx + 11, sy + 6, 3, 6); ctx.fillRect(sx + 13, sy + 12, 3, 1); ctx.fillRect(sx + 11, sy + 13, 3, 1); ctx.fillRect(sx + 9, sy + 14, 3, 6); } break;
+  }
+}
+
+/* ----- flamethrower animation ----- */
+drawFlames = function (camx, camy) {
+  if (!G.flames || !G.flames.length) return;
+  var dv = DIRS[P.face] || [0, 1];
+  G.flames.forEach(function (f) {
+    var cx = f.x * T - camx + T / 2, cy = f.y * T - camy + T / 2, a = f.t >= 2 ? 1 : 0.8;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    var gr = ctx.createRadialGradient(cx, cy, 2, cx, cy, T * 1.1); gr.addColorStop(0, 'rgba(255,170,40,' + (0.55 * a).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(255,40,10,0)'); ctx.fillStyle = gr; ctx.fillRect(cx - T * 1.1, cy - T * 1.1, T * 2.2, T * 2.2);
+    ctx.restore();
+    var layers = [['#ff2a10', 1, 1], ['#ff7a20', 0.78, 0.8], ['#ffd060', 0.55, 0.6], ['#fffbe0', 0.3, 0.38]];
+    layers.forEach(function (L) {
+      ctx.fillStyle = L[0];
+      for (var j = 0; j < 6; j++) {
+        var ph = G.t * 13 + j * 1.9 + f.x * 3.1 + f.y * 5.3, fl = 0.65 + 0.35 * Math.sin(ph), sw = Math.sin(ph * 0.7) * 3;
+        var bx = cx + (j - 2.5) * 4.2 - dv[0] * 2 + (dv[1] ? 0 : 0), by = cy + 11 - (dv[1] > 0 ? 0 : 0), w = 5.5 * L[1], h = (15 + 8 * fl) * L[2], lean = dv[0] * 5 + sw;
+        ctx.beginPath(); ctx.moveTo(bx - w, by); ctx.quadraticCurveTo(bx - w * 0.5 + lean, by - h * 0.6, bx + lean * 1.4, by - h); ctx.quadraticCurveTo(bx + w * 0.5 + lean, by - h * 0.6, bx + w, by); ctx.closePath(); ctx.globalAlpha = a * (L[2] === 1 ? 0.85 : 1); ctx.fill();
+      }
+    });
+    ctx.globalAlpha = 1;
+    for (var e = 0; e < 5; e++) { var u = (G.t * 0.9 + e * 0.21 + f.x * 0.37) % 1; ctx.fillStyle = e % 2 ? '#ffe36a' : '#ff9a40'; ctx.globalAlpha = (1 - u) * a; ctx.fillRect(Math.round(cx - 9 + Math.sin(u * 9 + e * 2) * 8 + e * 3.5), Math.round(cy + 8 - u * 30), 2, 2); }
+    ctx.globalAlpha = 1;
+  });
+};
 
 buildMk();
 
@@ -3562,7 +3727,7 @@ function gainXp(n) {
 }
 var SAVEKEY = 'cq-save';
 function saveRun() {
-  try { localStorage.setItem(SAVEKEY, JSON.stringify({ pu: G.pulsarUntil, deep: G.deep, endless: !!G.endless, runMs: G.runMs || 0, potUsed: G.potUsed || 0, floor: G.floor, gold: G.gold, kills: G.kills, turn: G.turn, P: { hp: P.hp, mhp: P.mhp, lvl: P.lvl, xp: P.xp, belly: P.belly, mbelly: P.mbelly, str: P.str, dex: P.dex, int: P.int, pts: P.pts, inv: P.inv }, ch: P.ch, swUsed: P.swUsed, pet: P.pet ? { tk: P.pet.tk, tn: P.pet.tn, atk: P.pet.atk, id: P.pet.id, xp: P.pet.xp, lvl: P.pet.lvl } : null })); } catch (e) {}
+  try { localStorage.setItem(SAVEKEY, JSON.stringify({ sr: G.stockRun || {}, ga: !!G.gotArmor, pu: G.pulsarUntil, deep: G.deep, endless: !!G.endless, runMs: G.runMs || 0, potUsed: G.potUsed || 0, floor: G.floor, gold: G.gold, kills: G.kills, turn: G.turn, P: { hp: P.hp, mhp: P.mhp, lvl: P.lvl, xp: P.xp, belly: P.belly, mbelly: P.mbelly, str: P.str, dex: P.dex, int: P.int, pts: P.pts, inv: P.inv }, ch: P.ch, swUsed: P.swUsed, pet: P.pet ? { tk: P.pet.tk, tn: P.pet.tn, atk: P.pet.atk, id: P.pet.id, xp: P.pet.xp, lvl: P.pet.lvl } : null })); } catch (e) {}
 }
 function clearSave() { try { localStorage.removeItem(SAVEKEY); } catch (e) {} refreshCont(); }
 function readSave() { try { var v = JSON.parse(localStorage.getItem(SAVEKEY) || 'null'); if (v && v.P && v.floor) return v; } catch (e) {} return null; }
@@ -3574,7 +3739,7 @@ function continueRun() {
   P.ch = CHARS[sv.ch] ? sv.ch : 'cumhead'; P.swUsed = !!sv.swUsed; P.bf = {}; G.deep = !!sv.deep; G.endless = !!sv.endless; G.runMs = sv.runMs || 0; G.potUsed = sv.potUsed || 0; P.nh = 0; G.tokRun = 0; initPet();
   if (sv.pet && sv.pet.id === 'tamed' && restoreTamed(sv.pet)) { }
   else if (sv.pet && P.pet.id !== 'frog' && P.pet.id !== 'cat') { P.pet.id = META.pets[sv.pet.id] ? sv.pet.id : 'gloop'; P.pet.xp = sv.pet.xp; P.pet.lvl = sv.pet.lvl; }
-  G.pulsarUntil = sv.pu || 0; G.floor = sv.floor; G.gold = sv.gold; G.kills = sv.kills; G.turn = sv.turn; G.cause = ''; msgs = [];
+  G.pulsarUntil = sv.pu || 0; G.stockRun = sv.sr || {}; G.gotArmor = !!sv.ga; G.floor = sv.floor; G.gold = sv.gold; G.kills = sv.kills; G.turn = sv.turn; G.cause = ''; msgs = [];
   genFloor(G.floor); say('You pick up where you left off, on B' + G.floor + 'F.', '#ff2630'); G.state = 'play'; queued = null; G.lock = 0.2;
 }
 function hurtMon(m, dmg, byPlayer) {
@@ -3623,13 +3788,19 @@ function kindCount(k) { var n = 0; for (var i = 0; i < P.inv.length; i++) if (IT
 function addItem(id) {
   if (kindCount(ITEMS[id].k) >= capOf(ITEMS[id].k)) return false; P.inv.push({ id: id }); return true;
 }
+function firstArmor(id) {
+  var k = ITEMS[id].k; if (G.gotArmor || ['armor', 'head', 'arms', 'legs'].indexOf(k) < 0) return;
+  G.gotArmor = true; var e = P.inv[P.inv.length - 1]; if (!e || e.id !== id) return;
+  if (P.inv.some(function (o) { return o.eq && ITEMS[o.id].k === k; })) return;
+  e.eq = true; say('You put on the ' + ITEMS[id].name + ' right away.', '#ffe36a');
+}
 function stepOnto() {
   var i = itemAt(P.x, P.y);
   if (i >= 0) {
     var it = gitems[i];
     if (it.id === 'gold') { var ga = Math.round(it.amt * goldMul()); G.gold += ga; gitems.splice(i, 1); say('Picked up ' + ga + ' drops.', '#ffe36a'); sfx.pick(G.t); }
     else if (it.id === 'token') { addTokens(it.amt); gitems.splice(i, 1); say('Picked up ' + it.amt + ' Cumhead token' + (it.amt > 1 ? 's' : '') + '. Kept forever.', '#ffe36a'); pop(P.x, P.y, '+' + it.amt + ' TOKEN', '#ffe36a'); sfx.pick(G.t); }
-    else if (addItem(it.id)) { gitems.splice(i, 1); say('Picked up ' + ITEMS[it.id].name + '.', '#f1e7d0'); sfx.pick(G.t); }
+    else if (addItem(it.id)) { gitems.splice(i, 1); say('Picked up ' + ITEMS[it.id].name + '.', '#f1e7d0'); sfx.pick(G.t); firstArmor(it.id); }
     else say('Your ' + KINDNAME[ITEMS[it.id].k] + ' slots are full. ' + ITEMS[it.id].name + ' is here.', '#a6968f');
   }
   var t = trapAt(P.x, P.y);
@@ -3714,7 +3885,7 @@ function clearLine(x0, y0, x1, y1) {
   return true;
 }
 function slimeSplit(m) {
-  var n = 0; mons.forEach(function (q) { if (q.hp > 0 && q.d.split) n++; }); if (n >= 12) return;
+  var n = 0; mons.forEach(function (q) { if (q.hp > 0 && q.d.split) n++; }); if (n >= (G.floor <= 15 && !G.endless ? 6 : 12)) return;
   var ds = ['u', 'd', 'l', 'r'].sort(function () { return Math.random() - 0.5; });
   for (var i = 0; i < 4; i++) {
     var v = DIRS[ds[i]], nx = m.x + v[0], ny = m.y + v[1];
@@ -3737,7 +3908,7 @@ function monAct(m) {
     if (dist >= 0 && dist <= 4 && Math.random() < 0.45) { m.asleep = false; pop(m.x, m.y, '!', '#ffe36a'); }
     return;
   }
-  if (d.split && dist >= 0 && dist <= d.aware) { m.sc = (m.sc || 0) + 1; if (m.sc >= 4) { m.sc = 0; slimeSplit(m); } }
+  if (d.split && dist >= 0 && dist <= d.aware) { m.sc = (m.sc || 0) + 1; if (m.sc >= (G.floor <= 15 ? 10 : 4)) { m.sc = 0; slimeSplit(m); } }
   var adj = Math.abs(m.x - P.x) + Math.abs(m.y - P.y) === 1;
   if (adj) {
     m.face = P.x > m.x ? 1 : (P.x < m.x ? -1 : m.face);
@@ -3809,7 +3980,7 @@ function ffRowKV(box, k, v, cls) { var r = document.createElement('div'); r.clas
 function cmdFor(i) {
   var it = P.inv[i], d = ITEMS[it.id];
   var verb = d.k === 'food' ? 'EAT' : d.k === 'potion' ? 'DRINK' : d.k === 'scroll' ? 'READ' : (it.eq ? 'UNEQUIP' : 'EQUIP');
-  return [[verb, function () { useItem(i); }], ['THROW', function () { startAim(i); }], ['DROP', function () { dropItem(i); }], ['CANCEL', function () { invMode = 'list'; renderInv(); }]];
+  return [[verb, function () { useItem(i); }], ['THROW', function () { startAim(i); }], ['DROP', function () { dropItem(i); }], [it.lk ? 'UNLOCK' : 'LOCK', function () { it.lk = !it.lk; say(it.lk ? 'Locked the ' + d.name + '. Shops will not buy it.' : 'Unlocked the ' + d.name + '.', '#ffe36a'); invMode = 'list'; renderInv(); }], ['CANCEL', function () { invMode = 'list'; renderInv(); }]];
 }
 function runCmd(n) { var c = cmdList[n]; if (!c) return; sfx.click(); c[1](); }
 function eqIds() { return invOfKind(EQSLOTS[eqSlot][0]); }
@@ -3878,7 +4049,7 @@ function renderInv() {
       var o = P.inv[pi], d = ITEMS[o.id], st = itemStat(o.id, d, o.eq), sv = document.createElement('span');
       sv.appendChild(document.createTextNode(st[0])); if (st[1]) { var cm = document.createElement('em'); cm.textContent = ' ' + st[1]; cm.className = st[1][0] === '+' ? 'up' : 'dn'; sv.appendChild(cm); }
       var rw = ffRow(list, invName(o), sv, (ri === invCur ? 'sel' : '') + (o.eq ? ' eq' : ''), function () { invCur = ri; sfx.click(); openCmd(); }, function () { if (invMode === 'list' && invCur !== ri) { invCur = ri; paintInv(); } }, iconURL(o.id));
-      if (o.eq) { var eq = document.createElement('i'); eq.className = 'eqm'; eq.textContent = 'E'; rw.insertBefore(eq, rw.lastChild); }
+      if (o.eq || o.lk) { var eq = document.createElement('i'); eq.className = 'eqm'; eq.textContent = o.eq ? 'E' : 'LOCK'; rw.insertBefore(eq, rw.lastChild); }
     });
     if (mode === 'cmd' && ids.length) {
       cw.hidden = false; cmdList = cmdFor(ids[invCur]); if (cmdIdx >= cmdList.length) cmdIdx = 0;
@@ -4077,13 +4248,13 @@ function useItem(i) {
   keepInvOpen(); endTurn(0.1);
 }
 function dropItem(i) {
-  var it = P.inv[i]; if (!it) return;
+  var it = P.inv[i]; if (!it) return; if (it.lk) { say('The ' + ITEMS[it.id].name + ' is locked. UNLOCK it first.', '#ff9a40'); sfx.click(); return; }
   if (itemAt(P.x, P.y) >= 0) { say('There is already something here.', '#a6968f'); return; }
   gitems.push({ x: P.x, y: P.y, id: it.id }); say('Dropped the ' + ITEMS[it.id].name + '.', '#a6968f'); P.inv.splice(i, 1); sfx.click();
   invMode = 'list'; renderInv();
 }
 function startAim(i) {
-  var it = P.inv[i]; if (!it) return;
+  var it = P.inv[i]; if (!it) return; if (it.lk) { say('The ' + ITEMS[it.id].name + ' is locked. UNLOCK it first.', '#ff9a40'); sfx.click(); return; }
   G.aim = i; closeInv(); G.state = 'aim'; queued = null; say('Throw ' + ITEMS[it.id].name + ' which way? (A cancels)', '#ffe36a');
 }
 function cancelAim() { if (G.state === 'aim') { G.state = 'play'; G.aim = -1; say('Cancelled.', '#a6968f'); } }
@@ -4271,6 +4442,7 @@ function drawTile(x, y, sx, sy, isVis) {
   ctx.fillStyle = ((x + y) & 1) ? bf.f[0] : bf.f[1]; ctx.fillRect(sx, sy, T, T);
   ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(sx, sy, T, 1); ctx.fillRect(sx, sy, 1, T);
   var h = hash(x * 7, y * 13); if (h < 0.18) { ctx.fillStyle = bf.a; ctx.fillRect(sx + Math.floor(h * 100) % 20 + 3, sy + Math.floor(h * 777) % 20 + 3, 2, 2); }
+  if (bf.p) bigPat(bf, x, y, sx, sy);
   if (t === 2) {
     ctx.fillStyle = '#000'; ctx.fillRect(sx + 3, sy + 3, T - 6, T - 6);
     for (var s = 0; s < 4; s++) { ctx.fillStyle = s % 2 ? '#5a070c' : '#c4121c'; ctx.fillRect(sx + 4 + s * 2, sy + 4 + s * 2, T - 8 - s * 4, T - 8 - s * 4); }
@@ -4437,7 +4609,7 @@ function frame(ts) {
   render();
 }
 requestAnimationFrame(frame);
-window.__cq = { get traps() { return traps; }, X: { tameMon: tameMon, charmCheck: charmCheck, mbReveal: mbReveal, fireRanged: fireRanged, buyQty: buyQty, equipOff: equipOff, openGameOpts: openGameOpts, genSecret: genSecret, genFloorShop: genFloorShop, drawCard: drawCard, openEndless: openEndless, endlessMenu: endlessMenu, recordEndless: recordEndless, genHub: genHub, eatLeast: eatLeast, hitWall: hitWall, unlockEndless: unlockEndless, openBoard: openBoard, openLeaderboard: openLeaderboard, openClub: openClub, enterBuilding: enterBuilding, hubShop: hubShop, bossDef: bossDef, mkId: mkId, madMul: madMul, getG: function () { return G; }, trapKind: trapKind, extTrap: extTrap, fireRanged: fireRanged, blumDefeated: blumDefeated, genBonusNatty: genBonusNatty, applyFlier: applyFlier, startAim: startAim, throwItem: throwItem, spawnMon: spawnMon, spawnBoss: spawnBoss, capOf: capOf, healP: healP, hurtPlayer: hurtPlayer, endTurn: endTurn, frogTouch: frogTouch, FLIERS: FLIERS, SHOPS: SHOPS, MONS: MONS, restStop: restStop }, charSprite: charSprite, getNpcSpr: getNpcSpr, ATLAS: ATLAS, imgs: imgs, SP: SP, IC: IC, ITEMS: ITEMS, step: step, pAtk: pAtk, pDef: pDef, pBlock: pBlock, G: G, get P() { return P; }, get mons() { return mons; }, get map() { return map; }, get items() { return gitems; }, start: startGame, tryMove: tryMove, act: waitOrStairs, useItem: useItem, get rooms() { return rooms; }, genFloor: genFloor, genShop: genShop, openShop: openShop, useSpecial: useSpecial, menuPress: menuPress, openInv: openInv, kbScope: kbScope, cutStep: cutStep, music: music, sfxAudio: function () { return sfx.audio(); },  updateVis: updateVis, camSnap: camSnap, hurtMon: hurtMon, META: META, CHARS: CHARS, PETS: PETS, genHub: genHub, enterDungeon: enterDungeon, openSanct: openSanct, openClub: openClub, openArcade: openArcade, closeArcade: closeArcade, initPet: initPet, petGain: petGain, petAct: petAct, applyChar: applyChar, addRep: addRep, addTokens: addTokens, slimeSplit: slimeSplit, spawnMon: spawnMon, useNew: useNew, isUnlocked: isUnlocked, lockedIds: lockedIds, unlockCost: unlockCost, get gitems() { return gitems; }, MW: MW, MH: MH, bfs: bfs, get dmap() { return dmap; } };
+window.__cq = { biome: function (n) { return biome(n); }, stepOnto: function () { return stepOnto(); }, closeShop: function () { return closeShop(); }, get traps() { return traps; }, X: { tameMon: tameMon, charmCheck: charmCheck, mbReveal: mbReveal, fireRanged: fireRanged, buyQty: buyQty, equipOff: equipOff, openGameOpts: openGameOpts, genSecret: genSecret, genFloorShop: genFloorShop, drawCard: drawCard, openEndless: openEndless, endlessMenu: endlessMenu, recordEndless: recordEndless, genHub: genHub, eatLeast: eatLeast, hitWall: hitWall, unlockEndless: unlockEndless, openBoard: openBoard, openLeaderboard: openLeaderboard, openClub: openClub, enterBuilding: enterBuilding, hubShop: hubShop, bossDef: bossDef, mkId: mkId, madMul: madMul, getG: function () { return G; }, trapKind: trapKind, extTrap: extTrap, fireRanged: fireRanged, blumDefeated: blumDefeated, genBonusNatty: genBonusNatty, applyFlier: applyFlier, startAim: startAim, throwItem: throwItem, spawnMon: spawnMon, spawnBoss: spawnBoss, capOf: capOf, healP: healP, hurtPlayer: hurtPlayer, endTurn: endTurn, frogTouch: frogTouch, FLIERS: FLIERS, SHOPS: SHOPS, MONS: MONS, restStop: restStop }, charSprite: charSprite, getNpcSpr: getNpcSpr, ATLAS: ATLAS, imgs: imgs, SP: SP, IC: IC, ITEMS: ITEMS, step: step, pAtk: pAtk, pDef: pDef, pBlock: pBlock, G: G, get P() { return P; }, get mons() { return mons; }, get map() { return map; }, get items() { return gitems; }, start: startGame, tryMove: tryMove, act: waitOrStairs, useItem: useItem, get rooms() { return rooms; }, genFloor: genFloor, genShop: genShop, openShop: openShop, useSpecial: useSpecial, menuPress: menuPress, openInv: openInv, kbScope: kbScope, cutStep: cutStep, music: music, sfxAudio: function () { return sfx.audio(); },  updateVis: updateVis, camSnap: camSnap, hurtMon: hurtMon, META: META, CHARS: CHARS, PETS: PETS, genHub: genHub, enterDungeon: enterDungeon, openSanct: openSanct, openClub: openClub, openArcade: openArcade, closeArcade: closeArcade, initPet: initPet, petGain: petGain, petAct: petAct, applyChar: applyChar, addRep: addRep, addTokens: addTokens, slimeSplit: slimeSplit, spawnMon: spawnMon, useNew: useNew, isUnlocked: isUnlocked, lockedIds: lockedIds, unlockCost: unlockCost, get gitems() { return gitems; }, MW: MW, MH: MH, bfs: bfs, get dmap() { return dmap; } };
 })();
 
 </script>
