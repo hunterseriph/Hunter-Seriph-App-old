@@ -2618,6 +2618,7 @@ function charPet() { return isCh('amy') ? 'frog' : isCh('greebo') ? 'cat' : null
 function keepInvOpen() { if (G.state === 'inv') G.keepInv = true; else closeInv(); }
 function endTurn(lock) {
   endTurn0(lock);
+  autoSave();
   if (G.keepInv) { G.keepInv = false; if (!P.dead && G.state === 'inv') { if (invMode === 'cmd') invMode = 'list'; if (invMode === 'eqpick') { var ei = eqIds(); if (eqCur >= ei.length) eqCur = Math.max(0, ei.length - 1); } else { var ci = curIds(); if (invCur >= ci.length) invCur = Math.max(0, ci.length - 1); } renderInv(); } }
 }
 function eatLeast() {
@@ -3728,7 +3729,7 @@ function gainXp(n) {
 }
 var SAVEKEY = 'cq-save';
 function saveRun() {
-  try { localStorage.setItem(SAVEKEY, JSON.stringify({ sr: G.stockRun || {}, ga: G.gotArmor || {}, pu: G.pulsarUntil, deep: G.deep, endless: !!G.endless, runMs: G.runMs || 0, potUsed: G.potUsed || 0, floor: G.floor, gold: G.gold, kills: G.kills, turn: G.turn, P: { hp: P.hp, mhp: P.mhp, lvl: P.lvl, xp: P.xp, belly: P.belly, mbelly: P.mbelly, str: P.str, dex: P.dex, int: P.int, pts: P.pts, inv: P.inv }, ch: P.ch, swUsed: P.swUsed, pet: P.pet ? { tk: P.pet.tk, tn: P.pet.tn, atk: P.pet.atk, id: P.pet.id, xp: P.pet.xp, lvl: P.pet.lvl } : null })); } catch (e) {}
+  try { localStorage.setItem(SAVEKEY, JSON.stringify({ fs: floorSnap(), sr: G.stockRun || {}, ga: G.gotArmor || {}, pu: G.pulsarUntil, deep: G.deep, endless: !!G.endless, runMs: G.runMs || 0, potUsed: G.potUsed || 0, floor: G.floor, gold: G.gold, kills: G.kills, turn: G.turn, P: { hp: P.hp, mhp: P.mhp, lvl: P.lvl, xp: P.xp, belly: P.belly, mbelly: P.mbelly, str: P.str, dex: P.dex, int: P.int, pts: P.pts, inv: P.inv }, ch: P.ch, swUsed: P.swUsed, pet: P.pet ? { tk: P.pet.tk, tn: P.pet.tn, atk: P.pet.atk, id: P.pet.id, xp: P.pet.xp, lvl: P.pet.lvl } : null })); } catch (e) {}
 }
 function clearSave() { try { localStorage.removeItem(SAVEKEY); } catch (e) {} refreshCont(); }
 function readSave() { try { var v = JSON.parse(localStorage.getItem(SAVEKEY) || 'null'); if (v && v.P && v.floor) return v; } catch (e) {} return null; }
@@ -3741,7 +3742,7 @@ function continueRun() {
   if (sv.pet && sv.pet.id === 'tamed' && restoreTamed(sv.pet)) { }
   else if (sv.pet && P.pet.id !== 'frog' && P.pet.id !== 'cat') { P.pet.id = META.pets[sv.pet.id] ? sv.pet.id : 'gloop'; P.pet.xp = sv.pet.xp; P.pet.lvl = sv.pet.lvl; }
   G.pulsarUntil = sv.pu || 0; G.stockRun = sv.sr || {}; G.gotArmor = (sv.ga && typeof sv.ga === 'object') ? sv.ga : (sv.ga ? { armor: true } : {}); G.floor = sv.floor; G.gold = sv.gold; G.kills = sv.kills; G.turn = sv.turn; G.cause = ''; msgs = [];
-  genFloor(G.floor); say('You pick up where you left off, on B' + G.floor + 'F.', '#ff2630'); G.state = 'play'; queued = null; G.lock = 0.2;
+  if (!restoreFloor(sv)) genFloor(G.floor); say('You pick up where you left off, on B' + G.floor + 'F.', '#ff2630'); G.state = 'play'; queued = null; G.lock = 0.2;
 }
 function hurtMon(m, dmg, byPlayer) {
   if (m.npc) return;
@@ -3879,7 +3880,7 @@ function endTurn0(lock) {
   finishIfDead();
 }
 function finishIfDead() {
-  if (P.dead && G.state !== 'dying' && G.state !== 'over') { G.state = 'dying'; G.dieT = 1.2; el('inv').hidden = true; }
+  if (P.dead && G.state !== 'dying' && G.state !== 'over') { clearSave(); G.state = 'dying'; G.dieT = 1.2; el('inv').hidden = true; }
 }
 function clearLine(x0, y0, x1, y1) {
   var dx = Math.sign(x1 - x0), dy = Math.sign(y1 - y0), x = x0 + dx, y = y0 + dy;
@@ -4611,6 +4612,45 @@ function frame(ts) {
   render();
 }
 requestAnimationFrame(frame);
+/* =====================================================================================================
+   UPDATE 20: the run saves every 5 turns, mid-floor. Continue puts you back on the same floor, with the same
+   monsters, items, traps and HP, instead of a fresh floor. Dying wipes the save at once.
+   ===================================================================================================== */
+var AUTOSAVE_TURNS = 5;
+var SKIPG = { state: 1, t: 1, lock: 1, cam: 1, shake: 1, fade: 1, banner: 1, bubble: 1, cut: 1, cutA: 1, menuOn: 1, qty: 1, sBack: 1, optGame: 1, keepInv: 1, dieT: 1, aim: 1, arcGame: 1,
+  hub: 1, inn: 1, hubRet: 1, hubChat: 1, hubShops: 1, hubSlots: 1, wantEndless: 1, shopWho: 1 };
+function packArr(a, off) { var s = ''; for (var i = 0; i < a.length; i++) s += String.fromCharCode(a[i] + off); return s; }
+function unpackArr(s, a, off) { for (var i = 0; i < a.length; i++) a[i] = s.charCodeAt(i) - off; }
+function floorSnap() {
+  if (G.hub || P.dead || !(G.state === 'play' || G.state === 'inv' || G.state === 'levelup')) return null;
+  var g = {}, k; for (k in G) if (!SKIPG[k] && typeof G[k] !== 'function') g[k] = G[k];
+  var pp = {}; for (k in P) if (typeof P[k] !== 'function') pp[k] = P[k];
+  var ms = mons.filter(function (m) { return m.hp > 0 || m.npc; }).map(function (m) {
+    var o = {}; for (var q in m) if (q !== 'd' || m.npc || m.d.boss || !MONS[m.key]) o[q] = m[q]; return o;
+  });
+  return { v: 1, g: g, P: pp, map: packArr(map, 48), seen: packArr(seen, 48), room: packArr(roomId, 66), rooms: rooms, mons: ms, items: gitems, traps: traps };
+}
+function restoreFloor(sv) {
+  var f = sv.fs; if (!f || f.v !== 1 || !f.map || f.map.length !== MW * MH) return false;
+  try {
+    var ms = f.mons.map(function (o) { if (!o.d) { if (!MONS[o.key]) return null; o.d = MONS[o.key]; } return o; }).filter(Boolean), k;
+    unpackArr(f.map, map, 48); unpackArr(f.seen, seen, 48); unpackArr(f.room, roomId, 66);
+    rooms = f.rooms; gitems = f.items || []; traps = f.traps || []; mons = ms; popups = []; fx = [];
+    for (k in f.g) G[k] = f.g[k];
+    G.hub = false; G.inn = null; G.bubble = null; G.cut = null;
+    var ck = G.shop + ':' + G.floor; if (G.shop && G.stockRun && G.stockRun[ck]) G.shopStock = G.stockRun[ck];
+    var pet = P.pet; for (k in f.P) P[k] = f.P[k]; if (!P.pet) P.pet = pet;
+    P.dead = false; P.rx = P.x; P.ry = P.y; P.bx = 0; P.by = 0; P.flash = 0; P.moved = 0;
+    if (P.pet) { P.pet.rx = P.pet.x; P.pet.ry = P.pet.y; }
+    mons.forEach(function (m) { m.rx = m.x; m.ry = m.y; m.bx = 0; m.by = 0; m.flash = 0; });
+    var boss = !G.shop && !G.bossDead;
+    G.banner = { age: 0, a: 'B' + G.floor + 'F', b: G.shop ? 'REST STOP · ' + SHOPS[G.shop].name : (boss ? 'BOSS · ' + bossTitle(G.floor) : biome(G.floor).n), boss: boss };
+    bfs(); updateVis(); camSnap(); music.play(G.shop ? (G.pulsarUntil && G.floor <= G.pulsarUntil ? 'pulsar' : 'shop') : trackFor(G.floor), boss);
+    return true;
+  } catch (e) { return false; }
+}
+function autoSave() { if (G.turn % AUTOSAVE_TURNS === 0 && !G.hub && !P.dead && (G.state === 'play' || G.state === 'inv' || G.state === 'levelup')) saveRun(); }
+
 window.__cq = { biome: function (n) { return biome(n); }, stepOnto: function () { return stepOnto(); }, closeShop: function () { return closeShop(); }, get traps() { return traps; }, X: { tameMon: tameMon, charmCheck: charmCheck, mbReveal: mbReveal, fireRanged: fireRanged, buyQty: buyQty, equipOff: equipOff, openGameOpts: openGameOpts, genSecret: genSecret, genFloorShop: genFloorShop, drawCard: drawCard, openEndless: openEndless, endlessMenu: endlessMenu, recordEndless: recordEndless, genHub: genHub, eatLeast: eatLeast, hitWall: hitWall, unlockEndless: unlockEndless, openBoard: openBoard, openLeaderboard: openLeaderboard, openClub: openClub, enterBuilding: enterBuilding, hubShop: hubShop, bossDef: bossDef, mkId: mkId, madMul: madMul, getG: function () { return G; }, trapKind: trapKind, extTrap: extTrap, fireRanged: fireRanged, blumDefeated: blumDefeated, genBonusNatty: genBonusNatty, applyFlier: applyFlier, startAim: startAim, throwItem: throwItem, spawnMon: spawnMon, spawnBoss: spawnBoss, capOf: capOf, healP: healP, hurtPlayer: hurtPlayer, endTurn: endTurn, frogTouch: frogTouch, FLIERS: FLIERS, SHOPS: SHOPS, MONS: MONS, restStop: restStop }, charSprite: charSprite, getNpcSpr: getNpcSpr, ATLAS: ATLAS, imgs: imgs, SP: SP, IC: IC, ITEMS: ITEMS, step: step, pAtk: pAtk, pDef: pDef, pBlock: pBlock, G: G, get P() { return P; }, get mons() { return mons; }, get map() { return map; }, get items() { return gitems; }, start: startGame, tryMove: tryMove, act: waitOrStairs, useItem: useItem, get rooms() { return rooms; }, genFloor: genFloor, genShop: genShop, openShop: openShop, useSpecial: useSpecial, menuPress: menuPress, openInv: openInv, kbScope: kbScope, cutStep: cutStep, music: music, sfxAudio: function () { return sfx.audio(); },  updateVis: updateVis, camSnap: camSnap, hurtMon: hurtMon, META: META, CHARS: CHARS, PETS: PETS, genHub: genHub, enterDungeon: enterDungeon, openSanct: openSanct, openClub: openClub, openArcade: openArcade, closeArcade: closeArcade, initPet: initPet, petGain: petGain, petAct: petAct, applyChar: applyChar, addRep: addRep, addTokens: addTokens, slimeSplit: slimeSplit, spawnMon: spawnMon, useNew: useNew, isUnlocked: isUnlocked, lockedIds: lockedIds, unlockCost: unlockCost, get gitems() { return gitems; }, MW: MW, MH: MH, bfs: bfs, get dmap() { return dmap; } };
 })();
 
