@@ -521,17 +521,17 @@ function upCost(u, lvl) { return Math.round(u.base * Math.pow(1.32, lvl) + lvl *
 
 /* buildings in the town street, left to right. cost 0 = there from the start */
 var BUILDINGS = [
-  { id: 'club', name: "Cumhead's Clubhouse", fac: 'fac_club', npc: null, cost: 0, kind: 'club', quote: '"Every heir pays the house. The house gets bigger."' },
-  { id: 'greebo', name: "Greebo's Gourmet Goonery", fac: 'fac_greebo', npc: 'npc_greebo', cost: 0, kind: 'gear', quote: '"Gear for the job. Fresh cream optional."' },
-  { id: 'fate', name: "Stacked Fate's Table", fac: null, npc: 'npc_stackedfate', cost: 0, kind: 'fate', quote: '"Draw a card. The castle will do the rest."' },
-  { id: 'sanct', name: 'Spermaid Sanctum', fac: 'fac_sanct', npc: 'npc_spermaid', cost: 400, kind: 'runes', quote: '"Runes for the brave, sweetie. Three at a time."' },
+  { id: 'club', name: "Cumhead's Clubhouse", fac: 'fac_club', npc: null, cost: 0, kind: 'club', quote: '' },
+  { id: 'greebo', name: "Greebo's Gourmet Goonery", fac: 'fac_greebo', npc: 'npc_greebo', cost: 0, kind: 'gear', quote: '"Fresh cream pies. Don\'t ask what\'s in them."' },
+  { id: 'fate', name: "Stacked Fate's Table", fac: null, npc: 'npc_stackedfate', cost: 0, kind: 'fate', quote: '"The deck was never yours. Neither was your fate."' },
+  { id: 'sanct', name: 'Spermaid Sanctum', fac: 'fac_sanct', npc: 'npc_spermaid', cost: 400, kind: 'runes', quote: '' },
   { id: 'joff', name: "Joff's Pineapple Pizzaria", fac: 'fac_joff', npc: 'npc_joff', cost: 250, kind: 'prov', slot: 'food', quote: '"Pineapple belongs on pizza. Fight me."' },
-  { id: 'beebs', name: "Uncle Beeb's Tavern", fac: 'fac_beebs', npc: 'npc_beebs', cost: 350, kind: 'prov', slot: 'drink', quote: '"One for the road. The road is a castle."' },
-  { id: 'cafe', name: "Kaya & Elden's Cum Café", fac: 'fac_cafe', npc: 'npc_kaya', npc2: 'npc_elden', cost: 450, kind: 'prov', slot: 'cafe', quote: '"Coffee for the mana. Plates for the heart."' },
+  { id: 'beebs', name: "Uncle Beeb's Tavern", fac: 'fac_beebs', npc: 'npc_beebs', cost: 350, kind: 'prov', slot: 'drink', quote: '"Sit down, lad. First one\'s always warm."' },
+  { id: 'cafe', name: "Kaya & Elden's Cum Café", fac: 'fac_cafe', npc: 'npc_kaya', npc2: 'npc_elden', cost: 450, kind: 'prov', slot: 'cafe', quote: '"Welcome in! Kaya\'s on the coffee, Elden\'s on the grill."' },
   { id: 'amy', name: "Amy's Willy Chilli", fac: 'fac_amy', npc: 'npc_amy', cost: 600, kind: 'prov', slot: 'chilli', quote: '"Mild, hot or dynamite?"' },
   { id: 't', name: "T's Hussy House", fac: 'fac_t', npc: 'npc_t', cost: 800, kind: 'prov', slot: 'revive', quote: '"Come in, darling. I\'ll get the doors."' },
-  { id: 'saba', name: "Saba's Hut", fac: 'fac_saba', npc: 'npc_saba', cost: 700, kind: 'prov', slot: 'ward', quote: '"The first hit is a lie. Trust me."' },
-  { id: 'arcade', name: 'Potbelly Arcade', fac: 'fac_arcade', npc: 'npc_potbelly', cost: 0, kind: 'arcade', quote: '"Every heir gets a plaque. Most of them are short."' }
+  { id: 'saba', name: "Saba's Hitless Hemporium", fac: 'fac_saba', npc: 'npc_saba', cost: 700, kind: 'prov', slot: 'ward', quote: '"Hitless runs only. Take a look, my friend."' },
+  { id: 'arcade', name: 'Potbelly Arcade', fac: 'fac_arcade', npc: 'npc_potbelly', cost: 0, kind: 'arcade', quote: '"Cabinets are free, kid. Play all you like."' }
 ];
 /* one-run provisions bought in town, used up when the next run starts. One per slot. */
 var PROV = {
@@ -1523,7 +1523,7 @@ function openRunes() {
     if (!own) return { icon: r.icon, name: 'BUY ' + r.name.toUpperCase(), sub: r.d, price: fmtN(r.cost), cls: META.bank < r.cost ? 'off' : '', fn: function () { if (spend(r.cost)) { META.runes[r.id] = 1; if (META.runeOn.length < 3) META.runeOn.push(r.id); saveMeta(); renderMenu(true); } } };
     return { icon: r.icon, name: r.name.toUpperCase(), sub: r.d, price: on ? 'ON' : 'OFF', cls: on ? 'own' : '', fn: function () { if (on) META.runeOn.splice(META.runeOn.indexOf(r.id), 1); else { if (META.runeOn.length >= 3) { sfx.no(); toastMenu('THREE RUNES AT A TIME. TURN ONE OFF FIRST.'); return; } META.runeOn.push(r.id); } saveMeta(); sfx.click(); renderMenu(true); } };
   });
-  openMenu({ title: 'Spermaid Sanctum', note: BUILDINGS[3].quote + '  Runes on: ' + META.runeOn.length + '/3', pic: 'npc_spermaid', rows: rows });
+  openMenu({ title: 'Spermaid Sanctum', note: 'Runes on: ' + META.runeOn.length + '/3', pic: 'npc_spermaid', rows: rows });
 }
 function toastMenu(t) { el('menuNote').textContent = t; }
 function openFate(drawn) {
@@ -1541,7 +1541,7 @@ function openProv(b) {
     var mine = have === it.id;
     return { icon: it.icon, name: it.name.toUpperCase(), sub: it.d + (have && !mine ? '  (replaces what you bought)' : ''), price: mine ? 'READY' : fmtN(it.cost), cls: mine ? 'own' : (META.bank < it.cost ? 'off' : ''), fn: mine ? null : function () { if (spend(it.cost)) { META.prov[slot] = it.id; saveMeta(); renderMenu(true); } } };
   });
-  openMenu({ title: b.name, note: b.quote + '  One per heir, used up when the next run starts.', pic: b.npc, rows: rows });
+  openMenu({ title: b.name, note: (b.quote ? b.quote + '  ' : '') + 'One per heir, used up when the next run starts.', pic: b.npc, rows: rows });
 }
 function openArcadeMenu() {
   var rows = [

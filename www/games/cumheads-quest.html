@@ -2836,7 +2836,7 @@ function drawBoardNpc(m, camx, camy) {
   else { text('BEST', cx, by - 25, 'center', '#ffe36a', 6); var b1 = META.lb[0]; text(b1 ? 'B' + b1.floor + 'F' : '---', cx, by - 15, 'center', '#f1e7d0', 8); }
 }
 function openShopExt(m) {
-  if (m.mbDoor) { G.floor++; if (G.floor > best.floor) best.floor = G.floor; saveBest(); genShop(G.floor, 'masterbates'); G.mbLeave = true; G.lock = 0.3; G.fade = 0.5; say('Master Bates welcomes you into his Emporium. Leaving takes you down.', '#ffe36a'); saveRun(); return true; }
+  if (m.mbDoor) { G.floor++; if (G.floor > best.floor) best.floor = G.floor; saveBest(); genShop(G.floor, 'masterbates'); G.mbLeave = true; G.lock = 0.3; G.fade = 0.5; say('Master Bates welcomes you into his Emporium. Walk onto the door or the stairs when you are done.', '#ffe36a'); saveRun(); return true; }
   if (m.door === 'endless') { openEndless(); return true; }
   if (m.lb) { openLeaderboard(); return true; }
   if (m.board) { openBoard(); return true; }
