@@ -260,7 +260,7 @@ function drawEnemy(e, cx) {
   if (e.fade > 0 && Math.floor(G.t * 30) % 2) return;
   var im = enemyImg(e), sc = (e.d.sc || 1) * (e.mini ? 0.7 : 1), white = e.flash > 0 && Math.floor(G.t * 40) % 2 === 0;
   ctx.save(); if (white) ctx.filter = 'brightness(3)';
-  if (im.c) { ctx.translate(x, Math.round(e.y)); if (e.face < 0) ctx.scale(-1, 1); var c = im.c; ctx.drawImage(c, -c.width / 2, e.d.ai === 'fly' ? -c.height : -c.height, c.width, c.height); }
+  if (im.c) { ctx.translate(x, Math.round(e.y)); if (e.face < 0) ctx.scale(-1, 1); var c = im.c, ps = e.d.sc || 1; ctx.drawImage(c, Math.round(-c.width * ps / 2), Math.round(-c.height * ps), Math.round(c.width * ps), Math.round(c.height * ps)); }
   else spr(im.s, x, Math.round(e.y), e.face < 0, sc);
   ctx.restore();
   if (e.stun > 0) for (var s = 0; s < 3; s++) { var a = G.t * 6 + s * 2.1; R(ctx, '#ffe36a', x + Math.cos(a) * 8 - 1, e.y - e.h - 6 + Math.sin(a) * 2, 2, 2); }
@@ -351,6 +351,13 @@ function drawHud() {
   ctx.drawImage(dropImg, 8, 29); text(fmtN(RUN.drops), 22, 38, 'left', '#ffe36a', 7);
   if (RUN.powers.length) text('+' + RUN.powers.length, 116, 38, 'right', '#7a8aff', 6);
   drawMinimap();
+  if (G.lock && !bosses.length && enemies.length) {
+    // challenge rooms: how many are left, and arrows to any that are off screen
+    text('FOES LEFT ' + enemies.length, VW / 2, 52, 'center', '#ffe36a', 7);
+    var cx2 = G.cam.x;
+    enemies.forEach(function (e) { var sx = e.x - cx2, sy = clamp(e.y - e.h / 2, 60, VH - 20); if (sx >= 0 && sx <= VW) return; var left = sx < 0, ax = left ? 8 : VW - 8, pl = 0.6 + 0.4 * Math.sin(G.t * 8);
+      ctx.fillStyle = 'rgba(255,38,48,' + pl.toFixed(2) + ')'; ctx.beginPath(); ctx.moveTo(ax + (left ? -4 : 4), sy); ctx.lineTo(ax + (left ? 6 : -6), sy - 7); ctx.lineTo(ax + (left ? 6 : -6), sy + 7); ctx.fill(); });
+  }
   if (bosses.length && G.mode === 'play') {
     var alive = bosses.filter(function (b) { return b.alive && b.id !== 'cowpig'; }), hp = 0, mh = 0; bosses.forEach(function (b) { if (b.id !== 'cowpig') { hp += Math.max(0, b.hp); mh += b.mhp; } });
     if (alive.length) { var bw = Math.min(220, VW - 80), bx = Math.round((VW - bw) / 2); bar(bx, VH - 22, bw, 6, hp / mh, '#ff2630'); text(BOSSDEF[G.bossGroup] ? BOSSDEF[G.bossGroup].name.toUpperCase() : '', VW / 2, VH - 26, 'center', '#f1e7d0', 6); }

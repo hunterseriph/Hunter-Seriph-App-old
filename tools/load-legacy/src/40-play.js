@@ -176,7 +176,7 @@ function hurtP(dmg, srcx, by) {
 function dmgRoll() { var c = Math.random() < ST.crit; return { v: ST.dmg * (0.9 + Math.random() * 0.2) * (c ? 1.8 : 1), crit: c }; }
 function attack() {
   var c = CLASSES[RUN.cls], cd = c.cd * ST.atkMul; P.atkCd = cd; P.attackT = 0.22;
-  if (c.atk === 'shot') { sfx.shoot(); pshots.push({ k: 'shot', x: P.x + P.face * 12, y: P.y - P.h * 0.66, vx: P.face * 300, vy: 0, life: 0.55, r: 6, m: 1 }); }
+  if (c.atk === 'shot') { sfx.shoot(); pshots.push({ k: 'shot', x: P.x + P.face * 12, y: P.y - P.h * 0.55, vx: P.face * 300, vy: 0, life: 0.55, r: 6, rv: 10, m: 1 }); }
   else if (c.atk === 'whip') { sfx.whip(); pshots.push({ k: 'whip', x: P.x, y: P.y, life: 0.13, m: 1.15, hit: {} }); }
   else if (c.atk === 'pie') { sfx.lob(); pshots.push({ k: 'pie', x: P.x + P.face * 12, y: P.y - P.h * 0.62, vx: P.face * 260, vy: 0, life: 0.32, r: 10, m: 1.5 }); }
   else { sfx.spit(); pshots.push({ k: 'acid', x: P.x + P.face * 8, y: P.y - P.h * 0.6, vx: P.face * 360, vy: 0, life: 0.5, r: 4, m: 0.7 }); }
@@ -255,11 +255,14 @@ function updateEnemies(dt) {
       if (ai === 'charge' && e.st === 'go' && adx < 170 && Math.abs(dy) < 34 && (dx > 0) === (e.face > 0) && e.cd <= 0) { e.st = 'tell'; e.st2 = 0.35; }
       if (e.st === 'tell') { e.vx = 0; e.st2 -= dt; if (e.st2 <= 0) { e.st = 'rush'; e.st2 = 0.8; } }
       else if (e.st === 'rush') { e.vx = e.face * sp * 3.4; e.st2 -= dt; if (e.st2 <= 0 || e.hitWall) { e.st = 'go'; e.cd = 1.4; } }
-      else { e.vx = e.face * sp; e.cd -= dt;
-        if (ai === 'heavy' && adx < 150 && e.cd <= 0 && e.onGround) { e.cd = 3.2; e.vy = -260; e.slam = 1; }
+      else { e.cd -= dt;
+        // turn round at walls and ledges first, then walk, so walkers never get pinned against a wall
+        if (e.hitWall) e.face = -e.face;
         var ax = e.x + e.face * (e.w / 2 + 2), below = tileAt(ax, e.y + 4);
         if (e.onGround && !solidT(below) && below !== TL && below !== TV && below !== TG) e.face = -e.face;
-        if (e.hitWall) e.face = -e.face; }
+        if (e.face > 0 && boxSolid(e.x + e.w / 2, e.y - e.h + 2, e.x + e.w / 2 + 2, e.y - 2)) e.face = -1; else if (e.face < 0 && boxSolid(e.x - e.w / 2 - 2, e.y - e.h + 2, e.x - e.w / 2, e.y - 2)) e.face = 1;
+        e.vx = e.face * sp;
+        if (ai === 'heavy' && adx < 150 && e.cd <= 0 && e.onGround) { e.cd = 3.2; e.vy = -260; e.slam = 1; } }
       var wasG = e.onGround; moveBody(e, dt, GRAV);
       if (e.slam && e.onGround && !wasG) { e.slam = 0; G.shake = 6; sfx.land(); waves.push({ x: e.x - 16, y: e.y, dir: -1, life: 1.4, dmg: e.dmg }, { x: e.x + 16, y: e.y, dir: 1, life: 1.4, dmg: e.dmg }); }
     } else if (ai === 'fly') {
@@ -285,7 +288,8 @@ function updateEnemies(dt) {
       if (e.shootIn > 0) { e.shootIn -= dt; if (e.shootIn <= 0) { var a2 = Math.atan2(dy, dx); [-0.25, 0, 0.25].forEach(function (o) { eshots.push({ x: e.x, y: e.y - 20, vx: Math.cos(a2 + o) * 170, vy: Math.sin(a2 + o) * 170, life: 2.5, r: 4, dmg: e.dmg, k: 'bolt' }); }); sfx.fire(); } }
     }
     if (ai === 'fly' || ai === 'shoot' || ai === 'tele') { e.x = clamp(e.x, 20, L.w * T - 20); e.y = clamp(e.y, 30, L.h * T - 20); }
-    if (e.y > L.h * T + 40) { e.alive = false; continue; }
+    if (e.y > L.h * T + 40 || e.x < -40 || e.x > L.w * T + 40) { e.alive = false; continue; }
+    if (ai !== 'fly' && ai !== 'shoot' && boxSolid(e.x - e.w / 2 + 2, e.y - e.h + 2, e.x + e.w / 2 - 2, e.y - 2)) { e.stuck = (e.stuck || 0) + dt; if (e.stuck > 1.5) { e.alive = false; poof(e.x, e.y - e.h / 2, 8, ['#ff2630', '#5a0f14']); spill(e.x, e.y - e.h / 2, 2); continue; } } else e.stuck = 0;
     // touch: stomp or get hurt
     if (P.state === 'dead') continue;
     if (ov(P.x - P.w / 2, P.y - P.h, P.x + P.w / 2, P.y, e.x - e.w / 2, e.y - e.h, e.x + e.w / 2, e.y)) {
@@ -349,7 +353,7 @@ function updateShots(dt) {
     if (s.g) s.vy += s.g * dt; s.x += s.vx * dt; s.y += s.vy * dt;
     var tt = tileAt(s.x, s.y);
     if (solidT(tt) || s.y > L.h * T) { if (s.k === 'pie') splash(s.x, s.y, 24, s.m * 0.5); else poof(s.x, s.y, 4, ['#f1e7d0']); s.life = 0; continue; }
-    if (shotHits(s, s.x - s.r, s.y - s.r, s.x + s.r, s.y + s.r)) { if (s.k === 'pie') splash(s.x, s.y, 24, s.m * 0.5); s.life = 0; }
+    if (shotHits(s, s.x - s.r, s.y - (s.rv || s.r), s.x + s.r, s.y + (s.rv || s.r))) { if (s.k === 'pie') splash(s.x, s.y, 24, s.m * 0.5); s.life = 0; }
     else if (s.k === 'pie' && s.life <= 0) poof(s.x, s.y, 8, ['#f1e7d0', '#fff6d8', '#c8903a']);
   }
   pshots = pshots.filter(function (q) { return q.life > 0; });

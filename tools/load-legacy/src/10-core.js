@@ -63,7 +63,14 @@ function makeCrawler(f, body, dark) {
   var lx = f ? [4, 7, 10, 13] : [3, 6, 9, 12]; for (var j = 0; j < 4; j++) R(g, dark, lx[j], 11, 1, 2);
   return c;
 }
-function makeBat(f, body) {
+/* black bats with a thin red rim so they read against the dark */
+function makeBat(f, body, rim) {
+  var core = makeBat0(f, body), c = mk(18, 12), g = c.getContext('2d'), red = mk(16, 10), rg = red.getContext('2d');
+  rg.drawImage(core, 0, 0); rg.globalCompositeOperation = 'source-in'; rg.fillStyle = rim; rg.fillRect(0, 0, 16, 10);
+  [[0, 1], [2, 1], [1, 0], [1, 2]].forEach(function (o) { g.drawImage(red, o[0], o[1]); }); g.drawImage(core, 1, 1);
+  R(g, '#ff2630', 7, 5, 1, 1); R(g, '#ff2630', 10, 5, 1, 1); return c;
+}
+function makeBat0(f, body) {
   var c = mk(16, 10), g = c.getContext('2d');
   R(g, body, 6, 3, 4, 5); R(g, '#2a0509', 6, 2, 1, 1); R(g, '#2a0509', 9, 2, 1, 1); R(g, '#ff2630', 6, 4, 1, 1); R(g, '#ff2630', 9, 4, 1, 1);
   if (f) { R(g, body, 1, 5, 5, 3); R(g, body, 10, 5, 5, 3); R(g, '#2a0509', 0, 7, 2, 2); R(g, '#2a0509', 14, 7, 2, 2); }
@@ -73,8 +80,8 @@ function makeBat(f, body) {
 var PROC = {
   crawler: [makeCrawler(0, '#b3121c', '#2a0509'), makeCrawler(1, '#b3121c', '#2a0509')],
   crawlerN: [makeCrawler(0, '#e0207a', '#3a0420'), makeCrawler(1, '#e0207a', '#3a0420')],
-  bat: [makeBat(0, '#7d0c13'), makeBat(1, '#7d0c13')],
-  batP: [makeBat(0, '#5a1a8a'), makeBat(1, '#5a1a8a')]
+  bat: [makeBat(0, '#0c0406', '#c4121c'), makeBat(1, '#0c0406', '#c4121c')],
+  batP: [makeBat(0, '#0c0406', '#ff2630'), makeBat(1, '#0c0406', '#ff2630')]
 };
 
 /* ---------- sound (synthesised, no files; Spermhog's set plus a few) ---------- */

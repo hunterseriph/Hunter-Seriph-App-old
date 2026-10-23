@@ -28,10 +28,10 @@ var AREAORDER = ['castle', 'roof', 'city', 'dungeon'];
 
 /* enemies: hp/dmg are tier 1 values, scaled by the area tier and New Game+ */
 var ENEMIES = {
-  crawler: { name: 'Crawler', ai: 'walk', hp: 14, dmg: 10, spd: 34, w: 14, h: 12, proc: 'crawler', drops: 2 },
-  crawlerN: { name: 'Neon Crawler', ai: 'walk', hp: 16, dmg: 12, spd: 52, w: 14, h: 12, proc: 'crawlerN', drops: 2 },
-  bat: { name: 'Bat', ai: 'fly', hp: 9, dmg: 8, spd: 46, w: 12, h: 8, proc: 'bat', drops: 2 },
-  batP: { name: 'Night Bat', ai: 'fly', hp: 11, dmg: 10, spd: 60, w: 12, h: 8, proc: 'batP', drops: 2 },
+  crawler: { name: 'Crawler', ai: 'walk', hp: 14, dmg: 10, spd: 34, w: 26, h: 22, proc: 'crawler', sc: 2, drops: 2 },
+  crawlerN: { name: 'Neon Crawler', ai: 'walk', hp: 16, dmg: 12, spd: 52, w: 26, h: 22, proc: 'crawlerN', sc: 2, drops: 2 },
+  bat: { name: 'Bat', ai: 'fly', hp: 9, dmg: 8, spd: 46, w: 24, h: 15, proc: 'bat', sc: 1.7, drops: 2 },
+  batP: { name: 'Night Bat', ai: 'fly', hp: 11, dmg: 10, spd: 60, w: 24, h: 15, proc: 'batP', sc: 1.7, drops: 2 },
   ghoul: { name: 'Ghoul', ai: 'charge', hp: 24, dmg: 14, spd: 36, w: 14, h: 26, sp: 'm_ghoul', sc: 1.4, drops: 3 },
   imp: { name: 'Imp', ai: 'shoot', hp: 16, dmg: 10, spd: 40, w: 16, h: 16, sp: 'm_imp', sc: 1.3, drops: 3, fly: 1 },
   golem: { name: 'Brute', ai: 'heavy', hp: 60, dmg: 20, spd: 22, w: 26, h: 30, sp: 'm_golem', sc: 1.25, drops: 6, heavy: 1 },

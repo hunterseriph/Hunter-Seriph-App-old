@@ -206,7 +206,14 @@ function makeCrawler(f, body, dark) {
   var lx = f ? [4, 7, 10, 13] : [3, 6, 9, 12]; for (var j = 0; j < 4; j++) R(g, dark, lx[j], 11, 1, 2);
   return c;
 }
-function makeBat(f, body) {
+/* black bats with a thin red rim so they read against the dark */
+function makeBat(f, body, rim) {
+  var core = makeBat0(f, body), c = mk(18, 12), g = c.getContext('2d'), red = mk(16, 10), rg = red.getContext('2d');
+  rg.drawImage(core, 0, 0); rg.globalCompositeOperation = 'source-in'; rg.fillStyle = rim; rg.fillRect(0, 0, 16, 10);
+  [[0, 1], [2, 1], [1, 0], [1, 2]].forEach(function (o) { g.drawImage(red, o[0], o[1]); }); g.drawImage(core, 1, 1);
+  R(g, '#ff2630', 7, 5, 1, 1); R(g, '#ff2630', 10, 5, 1, 1); return c;
+}
+function makeBat0(f, body) {
   var c = mk(16, 10), g = c.getContext('2d');
   R(g, body, 6, 3, 4, 5); R(g, '#2a0509', 6, 2, 1, 1); R(g, '#2a0509', 9, 2, 1, 1); R(g, '#ff2630', 6, 4, 1, 1); R(g, '#ff2630', 9, 4, 1, 1);
   if (f) { R(g, body, 1, 5, 5, 3); R(g, body, 10, 5, 5, 3); R(g, '#2a0509', 0, 7, 2, 2); R(g, '#2a0509', 14, 7, 2, 2); }
@@ -216,8 +223,8 @@ function makeBat(f, body) {
 var PROC = {
   crawler: [makeCrawler(0, '#b3121c', '#2a0509'), makeCrawler(1, '#b3121c', '#2a0509')],
   crawlerN: [makeCrawler(0, '#e0207a', '#3a0420'), makeCrawler(1, '#e0207a', '#3a0420')],
-  bat: [makeBat(0, '#7d0c13'), makeBat(1, '#7d0c13')],
-  batP: [makeBat(0, '#5a1a8a'), makeBat(1, '#5a1a8a')]
+  bat: [makeBat(0, '#0c0406', '#c4121c'), makeBat(1, '#0c0406', '#c4121c')],
+  batP: [makeBat(0, '#0c0406', '#ff2630'), makeBat(1, '#0c0406', '#ff2630')]
 };
 
 /* ---------- sound (synthesised, no files; Spermhog's set plus a few) ---------- */
@@ -487,10 +494,10 @@ var AREAORDER = ['castle', 'roof', 'city', 'dungeon'];
 
 /* enemies: hp/dmg are tier 1 values, scaled by the area tier and New Game+ */
 var ENEMIES = {
-  crawler: { name: 'Crawler', ai: 'walk', hp: 14, dmg: 10, spd: 34, w: 14, h: 12, proc: 'crawler', drops: 2 },
-  crawlerN: { name: 'Neon Crawler', ai: 'walk', hp: 16, dmg: 12, spd: 52, w: 14, h: 12, proc: 'crawlerN', drops: 2 },
-  bat: { name: 'Bat', ai: 'fly', hp: 9, dmg: 8, spd: 46, w: 12, h: 8, proc: 'bat', drops: 2 },
-  batP: { name: 'Night Bat', ai: 'fly', hp: 11, dmg: 10, spd: 60, w: 12, h: 8, proc: 'batP', drops: 2 },
+  crawler: { name: 'Crawler', ai: 'walk', hp: 14, dmg: 10, spd: 34, w: 26, h: 22, proc: 'crawler', sc: 2, drops: 2 },
+  crawlerN: { name: 'Neon Crawler', ai: 'walk', hp: 16, dmg: 12, spd: 52, w: 26, h: 22, proc: 'crawlerN', sc: 2, drops: 2 },
+  bat: { name: 'Bat', ai: 'fly', hp: 9, dmg: 8, spd: 46, w: 24, h: 15, proc: 'bat', sc: 1.7, drops: 2 },
+  batP: { name: 'Night Bat', ai: 'fly', hp: 11, dmg: 10, spd: 60, w: 24, h: 15, proc: 'batP', sc: 1.7, drops: 2 },
   ghoul: { name: 'Ghoul', ai: 'charge', hp: 24, dmg: 14, spd: 36, w: 14, h: 26, sp: 'm_ghoul', sc: 1.4, drops: 3 },
   imp: { name: 'Imp', ai: 'shoot', hp: 16, dmg: 10, spd: 40, w: 16, h: 16, sp: 'm_imp', sc: 1.3, drops: 3, fly: 1 },
   golem: { name: 'Brute', ai: 'heavy', hp: 60, dmg: 20, spd: 22, w: 26, h: 30, sp: 'm_golem', sc: 1.25, drops: 6, heavy: 1 },
@@ -946,7 +953,7 @@ function hurtP(dmg, srcx, by) {
 function dmgRoll() { var c = Math.random() < ST.crit; return { v: ST.dmg * (0.9 + Math.random() * 0.2) * (c ? 1.8 : 1), crit: c }; }
 function attack() {
   var c = CLASSES[RUN.cls], cd = c.cd * ST.atkMul; P.atkCd = cd; P.attackT = 0.22;
-  if (c.atk === 'shot') { sfx.shoot(); pshots.push({ k: 'shot', x: P.x + P.face * 12, y: P.y - P.h * 0.66, vx: P.face * 300, vy: 0, life: 0.55, r: 6, m: 1 }); }
+  if (c.atk === 'shot') { sfx.shoot(); pshots.push({ k: 'shot', x: P.x + P.face * 12, y: P.y - P.h * 0.55, vx: P.face * 300, vy: 0, life: 0.55, r: 6, rv: 10, m: 1 }); }
   else if (c.atk === 'whip') { sfx.whip(); pshots.push({ k: 'whip', x: P.x, y: P.y, life: 0.13, m: 1.15, hit: {} }); }
   else if (c.atk === 'pie') { sfx.lob(); pshots.push({ k: 'pie', x: P.x + P.face * 12, y: P.y - P.h * 0.62, vx: P.face * 260, vy: 0, life: 0.32, r: 10, m: 1.5 }); }
   else { sfx.spit(); pshots.push({ k: 'acid', x: P.x + P.face * 8, y: P.y - P.h * 0.6, vx: P.face * 360, vy: 0, life: 0.5, r: 4, m: 0.7 }); }
@@ -1025,11 +1032,14 @@ function updateEnemies(dt) {
       if (ai === 'charge' && e.st === 'go' && adx < 170 && Math.abs(dy) < 34 && (dx > 0) === (e.face > 0) && e.cd <= 0) { e.st = 'tell'; e.st2 = 0.35; }
       if (e.st === 'tell') { e.vx = 0; e.st2 -= dt; if (e.st2 <= 0) { e.st = 'rush'; e.st2 = 0.8; } }
       else if (e.st === 'rush') { e.vx = e.face * sp * 3.4; e.st2 -= dt; if (e.st2 <= 0 || e.hitWall) { e.st = 'go'; e.cd = 1.4; } }
-      else { e.vx = e.face * sp; e.cd -= dt;
-        if (ai === 'heavy' && adx < 150 && e.cd <= 0 && e.onGround) { e.cd = 3.2; e.vy = -260; e.slam = 1; }
+      else { e.cd -= dt;
+        // turn round at walls and ledges first, then walk, so walkers never get pinned against a wall
+        if (e.hitWall) e.face = -e.face;
         var ax = e.x + e.face * (e.w / 2 + 2), below = tileAt(ax, e.y + 4);
         if (e.onGround && !solidT(below) && below !== TL && below !== TV && below !== TG) e.face = -e.face;
-        if (e.hitWall) e.face = -e.face; }
+        if (e.face > 0 && boxSolid(e.x + e.w / 2, e.y - e.h + 2, e.x + e.w / 2 + 2, e.y - 2)) e.face = -1; else if (e.face < 0 && boxSolid(e.x - e.w / 2 - 2, e.y - e.h + 2, e.x - e.w / 2, e.y - 2)) e.face = 1;
+        e.vx = e.face * sp;
+        if (ai === 'heavy' && adx < 150 && e.cd <= 0 && e.onGround) { e.cd = 3.2; e.vy = -260; e.slam = 1; } }
       var wasG = e.onGround; moveBody(e, dt, GRAV);
       if (e.slam && e.onGround && !wasG) { e.slam = 0; G.shake = 6; sfx.land(); waves.push({ x: e.x - 16, y: e.y, dir: -1, life: 1.4, dmg: e.dmg }, { x: e.x + 16, y: e.y, dir: 1, life: 1.4, dmg: e.dmg }); }
     } else if (ai === 'fly') {
@@ -1055,7 +1065,8 @@ function updateEnemies(dt) {
       if (e.shootIn > 0) { e.shootIn -= dt; if (e.shootIn <= 0) { var a2 = Math.atan2(dy, dx); [-0.25, 0, 0.25].forEach(function (o) { eshots.push({ x: e.x, y: e.y - 20, vx: Math.cos(a2 + o) * 170, vy: Math.sin(a2 + o) * 170, life: 2.5, r: 4, dmg: e.dmg, k: 'bolt' }); }); sfx.fire(); } }
     }
     if (ai === 'fly' || ai === 'shoot' || ai === 'tele') { e.x = clamp(e.x, 20, L.w * T - 20); e.y = clamp(e.y, 30, L.h * T - 20); }
-    if (e.y > L.h * T + 40) { e.alive = false; continue; }
+    if (e.y > L.h * T + 40 || e.x < -40 || e.x > L.w * T + 40) { e.alive = false; continue; }
+    if (ai !== 'fly' && ai !== 'shoot' && boxSolid(e.x - e.w / 2 + 2, e.y - e.h + 2, e.x + e.w / 2 - 2, e.y - 2)) { e.stuck = (e.stuck || 0) + dt; if (e.stuck > 1.5) { e.alive = false; poof(e.x, e.y - e.h / 2, 8, ['#ff2630', '#5a0f14']); spill(e.x, e.y - e.h / 2, 2); continue; } } else e.stuck = 0;
     // touch: stomp or get hurt
     if (P.state === 'dead') continue;
     if (ov(P.x - P.w / 2, P.y - P.h, P.x + P.w / 2, P.y, e.x - e.w / 2, e.y - e.h, e.x + e.w / 2, e.y)) {
@@ -1119,7 +1130,7 @@ function updateShots(dt) {
     if (s.g) s.vy += s.g * dt; s.x += s.vx * dt; s.y += s.vy * dt;
     var tt = tileAt(s.x, s.y);
     if (solidT(tt) || s.y > L.h * T) { if (s.k === 'pie') splash(s.x, s.y, 24, s.m * 0.5); else poof(s.x, s.y, 4, ['#f1e7d0']); s.life = 0; continue; }
-    if (shotHits(s, s.x - s.r, s.y - s.r, s.x + s.r, s.y + s.r)) { if (s.k === 'pie') splash(s.x, s.y, 24, s.m * 0.5); s.life = 0; }
+    if (shotHits(s, s.x - s.r, s.y - (s.rv || s.r), s.x + s.r, s.y + (s.rv || s.r))) { if (s.k === 'pie') splash(s.x, s.y, 24, s.m * 0.5); s.life = 0; }
     else if (s.k === 'pie' && s.life <= 0) poof(s.x, s.y, 8, ['#f1e7d0', '#fff6d8', '#c8903a']);
   }
   pshots = pshots.filter(function (q) { return q.life > 0; });
@@ -1888,7 +1899,7 @@ function drawEnemy(e, cx) {
   if (e.fade > 0 && Math.floor(G.t * 30) % 2) return;
   var im = enemyImg(e), sc = (e.d.sc || 1) * (e.mini ? 0.7 : 1), white = e.flash > 0 && Math.floor(G.t * 40) % 2 === 0;
   ctx.save(); if (white) ctx.filter = 'brightness(3)';
-  if (im.c) { ctx.translate(x, Math.round(e.y)); if (e.face < 0) ctx.scale(-1, 1); var c = im.c; ctx.drawImage(c, -c.width / 2, e.d.ai === 'fly' ? -c.height : -c.height, c.width, c.height); }
+  if (im.c) { ctx.translate(x, Math.round(e.y)); if (e.face < 0) ctx.scale(-1, 1); var c = im.c, ps = e.d.sc || 1; ctx.drawImage(c, Math.round(-c.width * ps / 2), Math.round(-c.height * ps), Math.round(c.width * ps), Math.round(c.height * ps)); }
   else spr(im.s, x, Math.round(e.y), e.face < 0, sc);
   ctx.restore();
   if (e.stun > 0) for (var s = 0; s < 3; s++) { var a = G.t * 6 + s * 2.1; R(ctx, '#ffe36a', x + Math.cos(a) * 8 - 1, e.y - e.h - 6 + Math.sin(a) * 2, 2, 2); }
@@ -1979,6 +1990,13 @@ function drawHud() {
   ctx.drawImage(dropImg, 8, 29); text(fmtN(RUN.drops), 22, 38, 'left', '#ffe36a', 7);
   if (RUN.powers.length) text('+' + RUN.powers.length, 116, 38, 'right', '#7a8aff', 6);
   drawMinimap();
+  if (G.lock && !bosses.length && enemies.length) {
+    // challenge rooms: how many are left, and arrows to any that are off screen
+    text('FOES LEFT ' + enemies.length, VW / 2, 52, 'center', '#ffe36a', 7);
+    var cx2 = G.cam.x;
+    enemies.forEach(function (e) { var sx = e.x - cx2, sy = clamp(e.y - e.h / 2, 60, VH - 20); if (sx >= 0 && sx <= VW) return; var left = sx < 0, ax = left ? 8 : VW - 8, pl = 0.6 + 0.4 * Math.sin(G.t * 8);
+      ctx.fillStyle = 'rgba(255,38,48,' + pl.toFixed(2) + ')'; ctx.beginPath(); ctx.moveTo(ax + (left ? -4 : 4), sy); ctx.lineTo(ax + (left ? 6 : -6), sy - 7); ctx.lineTo(ax + (left ? 6 : -6), sy + 7); ctx.fill(); });
+  }
   if (bosses.length && G.mode === 'play') {
     var alive = bosses.filter(function (b) { return b.alive && b.id !== 'cowpig'; }), hp = 0, mh = 0; bosses.forEach(function (b) { if (b.id !== 'cowpig') { hp += Math.max(0, b.hp); mh += b.mhp; } });
     if (alive.length) { var bw = Math.min(220, VW - 80), bx = Math.round((VW - bw) / 2); bar(bx, VH - 22, bw, 6, hp / mh, '#ff2630'); text(BOSSDEF[G.bossGroup] ? BOSSDEF[G.bossGroup].name.toUpperCase() : '', VW / 2, VH - 26, 'center', '#f1e7d0', 6); }
