@@ -8,7 +8,15 @@ This is my Android app. It's got my Twitch stream, my YouTube videos, my merch s
 2. Open the newest release on your Android phone and download **Hunter-Seriph.apk**.
 3. Tap it to install. Android will probably ask you to allow installs from your browser, so say yes.
 
-It's an Android app only for now, and it's a direct download rather than something from the Play Store.
+## PC version
+
+Every release also has **Hunter-Seriph-PC.exe** for Windows. Download it and double-click it, no install needed. To update, download the newer one and replace the old file. Your game saves carry over.
+
+Windows may say it protected your PC because the app isn't signed. Click **More info**, then **Run anyway**.
+
+On PC: arrow keys or WASD to move, Space/Z to jump, X to attack, C for specials, F11 for fullscreen. Gamepads work in the games too.
+
+Both versions are direct downloads rather than something from the Play Store.
 
 ## What's in it
 
@@ -20,7 +28,7 @@ It's an Android app only for now, and it's a direct download rather than somethi
 
 ## Coding used
 
-The whole app is plain HTML, CSS and JS in `www/`, wrapped into an Android app with Capacitor. The games are in `www/games/`. A GitHub Action builds the APK every time something is pushed. You can also run it by hand from the **Actions** tab.
+The whole app is plain HTML, CSS and JS in `www/`, wrapped into an Android app with Capacitor and a Windows app with Electron (`desktop/`). The games are in `www/games/`. A GitHub Action builds the APK and the PC app every time something is pushed. You can also run it by hand from the **Actions** tab.
 
 There are no API keys or secrets in this repo or in the app. Twitch uses their public embeds and YouTube comes from my channel's public feed.
 

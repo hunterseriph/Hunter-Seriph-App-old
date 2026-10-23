@@ -1,0 +1,8 @@
+node_modules/
+android/
+www/fonts/
+desktop/node_modules/
+desktop/dist/
+desktop/www/
+desktop/icon.png
+.DS_Store
