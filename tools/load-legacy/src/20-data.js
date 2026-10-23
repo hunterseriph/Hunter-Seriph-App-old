@@ -19,7 +19,7 @@ var AREAS = {
     sky: null, tint: 'rgba(90,0,12,0.22)', e1: '#ff3a44', e2: '#7a0a12', wall: '#14060a', wall2: '#22080e', pool: [['crawler', 3], ['bat', 2], ['ghoul', 2]] },
   roof: { name: 'Castle Roof', sub: 'ABOVE THE RED MOON', tier: 2, ox: 0, oy: 0, w: 6, h: 4, rooms: 14, boss: 'demon', music: 'b2',
     sky: 'rgba(40,0,20,0.35)', tint: 'rgba(50,10,60,0.30)', e1: '#ff5a8a', e2: '#5a0a3a', wall: null, pool: [['bat', 3], ['imp', 3], ['crawler', 1], ['ghoul', 1]] },
-  city: { name: 'The Black City', sub: 'NEON, BRICK AND BLOOD', tier: 3, ox: 6, oy: 4, w: 6, h: 4, rooms: 15, boss: 'sperm', music: 'b8',
+  city: { name: 'Ejaculand', sub: 'THE PARK NEVER CLOSES', tier: 3, ox: 6, oy: 4, w: 6, h: 4, rooms: 15, boss: 'sperm', music: 'b8',
     sky: 'rgba(60,0,10,0.25)', tint: 'rgba(120,10,40,0.24)', e1: '#ff2a8a', e2: '#6a0a3a', wall: null, pool: [['crawlerN', 2], ['slimeR', 2], ['imp', 2], ['golem', 1], ['batP', 1]] },
   dungeon: { name: 'The Dungeon', sub: 'CHAINS IN THE DARK', tier: 4, ox: 0, oy: 8, w: 6, h: 4, rooms: 16, boss: 'pig', music: 'b6',
     sky: null, tint: 'rgba(30,0,0,0.45)', e1: '#c4121c', e2: '#3a0408', wall: '#0a0305', wall2: '#140508', pool: [['ghoul', 2], ['slime', 2], ['vampire', 2], ['golem', 2], ['bat', 1]] }

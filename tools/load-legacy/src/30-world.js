@@ -60,6 +60,7 @@ function genWorld(seed) {
     shuffle(free, r);
     var want = ['merchant', 'powerup', 'challenge', 'trap', 'illusion'], extra = ['powerup', 'challenge', 'trap', 'illusion']; shuffle(extra, r); if (r() < 0.6) want.push(extra[0]); if (r() < 0.3) want.push(extra[1]);
     want.forEach(function (t) { var q = free.shift(); if (q) q.type = t; });
+    if (a === 'city') { var fq = free.filter(function (q) { return !q.ex.d; })[0] || free[0]; if (fq) { fq.type = 'flume'; free.splice(free.indexOf(fq), 1); } }
   });
   var id = 0; Object.keys(rooms).forEach(function (k) { rooms[k].id = id++; });
   return { seed: seed, rooms: rooms, start: key2(start.cx, start.cy) };
@@ -103,6 +104,14 @@ function buildRoom(rm) {
     ents.push({ k: 'turret', x: 1 * T + 6, y: rn(5, 8) * T + 8, dir: 1, cd: r() * 2 }); ents.push({ k: 'turret', x: (W - 1) * T - 6, y: rn(5, 8) * T + 8, dir: -1, cd: 1 + r() * 2 });
     var cp = [[14, 9], [16, 7]]; for (var ci = 0; ci < cp.length; ci++) if (free(cp[ci][0] - 1, cp[ci][1] - 2, cp[ci][0] + 1, cp[ci][1])) { plat(cp[ci][0] - 1, cp[ci][0] + 1, cp[ci][1]); ents.push({ k: 'chest', x: cp[ci][0] * T + 8, y: cp[ci][1] * T, big: 1 }); break; }
     if (ci === cp.length) ents.push({ k: 'chest', x: 3 * T, y: 15 * T, big: 1 });
+  } else if (t === 'flume') {
+    // the Load Flume: a channel of cream with logs drifting left to right. Ride them across; falling in hurts.
+    ents.push({ k: 'water', x0: 4 * T, x1: 28 * T, y: 13 * T + 6 });
+    for (var lg = 0; lg < 3; lg++) ents.push({ k: 'log', x: 4 * T + 34 + lg * 8 * T, y: 13 * T + 15, w: 52, h: 11, vx: 52 });
+    ents.push({ k: 'deco', d: 'flumesign', x: 16 * T, y: 2 * T + 4 });
+    RS(3, 11, 28, 15);
+    [[5, 8, 9], [12, 16, 7], [23, 27, 9]].forEach(function (p, i) { if (free(p[0], p[2] - 2, p[1], p[2])) { plat(p[0], p[1], p[2]); if (i === 2) ents.push({ k: 'chest', x: 25 * T + 8, y: 9 * T, big: 1 }); } });
+    nE = 2;
   } else if (t === 'illusion') {
     var right = !ex.r || r() < 0.5, mx0 = right ? 23 : 1, mx1 = right ? 30 : 8;
     if (ex.u && !right) { mx0 = 1; mx1 = 8; }
@@ -127,6 +136,8 @@ function buildRoom(rm) {
     for (var pi = 0; pi < np; pi++) { var pw = rn(3, 6), py = rn(6, 11), px = rn(3, 28 - pw); if (free(px - 1, py - 2, px + pw, py + 1)) plat(px, px + pw - 1, py); }
     if (t === 'normal') { var ns = rn(0, 2); for (var si = 0; si < ns; si++) { var sw = rn(2, 3), sx = rn(5, 26 - sw); var okS = true; for (x = sx; x < sx + sw; x++) if (res[14 * W + x] || G(x, 14) !== TA || G(x, 15) !== TW) okS = false; if (okS) { for (x = sx; x < sx + sw; x++) S(x, 14, TS); RS(sx, 13, sx + sw - 1, 14); } } }
   }
+  // Ejaculand's front gate, with Steve the mascot waving you in
+  if (rm.entry && rm.area === 'city') { ents.push({ k: 'deco', d: 'parkgate', x: 6 * T, y: 15 * T }); ents.push({ k: 'steve', x: 11 * T, y: 15 * T }); nE = 0; }
   // stand spots for enemies and drops
   var stands = [];
   for (x = 2; x < W - 2; x++) for (y = 2; y < H - 1; y++) { var b = G(x, y + 1); if (G(x, y) === TA && G(x, y - 1) === TA && (b === TW || b === TL) && !res[y * W + x]) stands.push([x, y]); }
@@ -134,7 +145,7 @@ function buildRoom(rm) {
   var pool = A.pool, tot = 0; pool.forEach(function (p) { tot += p[1]; });
   function pickE() { var v = r() * tot; for (var i = 0; i < pool.length; i++) { v -= pool[i][1]; if (v <= 0) return pool[i][0]; } return pool[0][0]; }
   for (var e = 0; e < nE; e++) {
-    var ek = pickE(), ed = ENEMIES[ek];
+    var ek = t === 'flume' ? (r() < 0.5 ? 'batP' : 'imp') : pickE(), ed = ENEMIES[ek];
     if (ed.ai === 'fly' || ed.ai === 'shoot') ents.push({ k: 'enemy', e: ek, x: rn(6, 25) * T, y: rn(3, 8) * T, idx: e });
     else { var sp = null; for (var q = 0; q < stands.length; q++) { var sx2 = stands[q][0]; if (sx2 > 6 && sx2 < W - 7 && Math.abs(sx2 - 16) > 2) { sp = stands.splice(q, 1)[0]; break; } } if (sp) ents.push({ k: 'enemy', e: ek, x: sp[0] * T + 8, y: (sp[1] + 1) * T, idx: e }); }
   }
@@ -143,7 +154,7 @@ function buildRoom(rm) {
   for (y = 3; y < H - 1; y++) for (x = 2; x < W - 2; x++) if (G(x, y) === TL && G(x - 1, y) !== TL && r() < 0.6) { var len = 0; while (G(x + len, y) === TL) len++; for (var k = 0; k < len; k += 2) ents.push({ k: 'drop', x: (x + k) * T + 8, y: y * T - 10, di: di++ }); }
   if (t === 'normal' && r() < 0.18 && stands.length) { var cs = stands.pop(); ents.push({ k: 'chest', x: cs[0] * T + 8, y: (cs[1] + 1) * T }); }
   // decorations by area
-  var nd = rn(2, 4); for (var dd = 0; dd < nd; dd++) ents.push({ k: 'deco', d: rm.area === 'city' ? 'neon' : (r() < 0.5 ? 'candle' : 'banner'), x: rn(3, 28) * T, y: rn(2, 6) * T, hue: r() });
+  var nd = rn(2, 4); for (var dd = 0; dd < nd; dd++) ents.push({ k: 'deco', d: rm.area === 'city' ? (r() < 0.6 ? 'bulbs' : 'neon') : (r() < 0.5 ? 'candle' : 'banner'), x: rn(3, 28) * T, y: rn(2, 6) * T, hue: r() });
   ents.forEach(function (en, i) { en.i = i; });
   return { w: W, h: H, tiles: tl, ents: ents, cx0: cx0, spawnX: (ex.d ? 8 : (t === 'start' ? 10 : 16)) * T };
 }

@@ -96,7 +96,7 @@ function moveBody(b, dt, grav) {
   b.x += b.vx * dt;
   hit = boxSolid(b.x - hw, b.y - b.h, b.x + hw, b.y);
   if (hit) { if (b.vx > 0) b.x = hit.tx * T - hw - 0.01; else if (b.vx < 0) b.x = (hit.tx + 1) * T + hw + 0.01; else { var c = (hit.tx + 0.5) * T; b.x += b.x < c ? -1 : 1; } b.vx = 0; b.hitWall = true; } else b.hitWall = false;
-  var prevY = b.y; b.vy = Math.min(TERM, b.vy + grav * dt); b.y += b.vy * dt; b.onGround = false; b.stand = -1;
+  var prevY = b.y; b.vy = Math.min(TERM, b.vy + grav * dt); b.y += b.vy * dt; b.onGround = false; b.stand = -1; b.mover = null;
   if (b.vy < 0) { hit = boxSolid(b.x - hw, b.y - b.h, b.x + hw, b.y - b.h + 1); if (hit) { b.y = (hit.ty + 1) * T + b.h; b.vy = 0; } }
   else {
     var tx0 = Math.floor((b.x - hw) / T), tx1 = Math.floor((b.x + hw - 0.001) / T), ty = Math.floor(b.y / T);
@@ -105,6 +105,7 @@ function moveBody(b, dt, grav) {
       var t = L.tiles[ty * L.w + tx], top = ty * T;
       if (solidT(t) || ((t === TL || t === TV || t === TG) && prevY <= top + 0.5 && !b.drop)) { b.y = top; b.vy = 0; b.onGround = true; if (t === TV) b.stand = ty * L.w + tx; break; }
     }
+    if (!b.onGround && b === P && L.movers) for (var mi = 0; mi < L.movers.length; mi++) { var mv = L.movers[mi], mt = mv.y - mv.h; if (prevY <= mt + 0.5 && b.y >= mt && Math.abs(b.x - mv.x) < mv.w / 2 + hw - 2) { b.y = mt; b.vy = 0; b.onGround = true; b.mover = mv; break; } }
     if (!b.onGround) { hit = boxSolid(b.x - hw, b.y - 1, b.x + hw, b.y); if (hit) { b.y = hit.ty * T; b.vy = 0; b.onGround = true; } }
   }
 }
@@ -142,6 +143,7 @@ function updatePlayer(dt) {
     if (specPressed) special();
     moveBody(P, dt, g);
     if (P.stand >= 0) crumble(P.stand);
+    if (P.mover && P.onGround) P.x += P.mover.vx * dt;
   }
   var sp = Math.abs(P.vx);
   if (P.onGround && !P.wasG && P.state === 'normal') sfx.land();
@@ -149,6 +151,8 @@ function updatePlayer(dt) {
   if (P.onGround && sp > 20 && P.state === 'normal') { var sf = Math.floor(P.anim * (sp < 115 ? 1 : 0.5)); if (sf !== P.lsf) { P.lsf = sf; sfx.step(G.t); } }
   if (P.onGround) P.anim += dt * (sp < 115 ? 4 + sp / 10 : sp * 0.154);
   if (sp < 10) P.idleT += dt; else P.idleT = 0;
+  // the Load Flume: fall in the cream and it throws you out
+  if (L.water && P.state === 'normal' && P.inv <= 0 && P.ooze <= 0 && P.x > L.water.x0 && P.x < L.water.x1 && P.y > L.water.y + 8) { sfx.splat(); poof(P.x, L.water.y, 14, ['#f1e7d0', '#fff6d8']); hurtP(6 + 3 * tierOf(), P.x - P.face, 'the Load Flume'); P.vy = -380; return; }
   // spikes
   if (P.state === 'normal' && P.inv <= 0 && P.ooze <= 0) {
     var tx0 = Math.floor((P.x - P.w / 2 + 2) / T), tx1 = Math.floor((P.x + P.w / 2 - 2) / T), ty0 = Math.floor((P.y - 10) / T), ty1 = Math.floor((P.y - 1) / T);
@@ -215,6 +219,7 @@ function spawnRoom(rs) {
     else if (e.k === 'chest') e.open = !!rs.c[e.i];
     else if (e.k === 'altar') e.taken = !!rs.taken;
   });
+  L.movers = L.ents.filter(function (e) { return e.k === 'log'; }).map(function (e) { return { x: e.x, y: e.y, w: e.w, h: e.h, vx: e.vx }; }); L.water = L.ents.filter(function (e) { return e.k === 'water'; })[0] || null;
   if (G.rm && G.rm.type === 'challenge' && rs.done && !L.ents.some(function (e) { return e.k === 'chest' && e.chal; })) L.ents.push({ k: 'chest', x: L.cx0 * T, y: 15 * T, big: 1, chal: 1, i: 'ch', open: !!rs.c.ch });
 }
 function roomEdges() {
@@ -412,6 +417,8 @@ function grantPower(id) {
 function updateRoomThings(dt) {
   // illusion ledges giving way
   for (var k in G.crumble) { G.crumble[k] -= dt; if (G.crumble[k] <= 0) { var i = +k; if (L.tiles[i] === TV) { L.tiles[i] = TA; G.layer = null; poof((i % L.w) * T + 8, Math.floor(i / L.w) * T + 4, 8, ['#4a1a1c', '#2a0509']); } delete G.crumble[k]; } }
+  // logs drift down the flume and go round again
+  if (L.movers) L.movers.forEach(function (m) { m.x += m.vx * dt; if (m.x > L.water.x1 - m.w / 2) { m.x = L.water.x0 + m.w / 2; if (P.mover === m) P.mover = null; } });
   // trap turrets
   L.ents.forEach(function (e) {
     if (e.k !== 'turret') return; e.cd -= dt;
